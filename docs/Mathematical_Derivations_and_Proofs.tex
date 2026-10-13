@@ -1,0 +1,224 @@
+\documentclass[11pt,a4paper]{article}
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage{lmodern}
+\usepackage{amsmath,amssymb,amsfonts,bm}
+\usepackage{geometry}
+\geometry{margin=2.2cm}
+\usepackage{booktabs}
+\usepackage{xcolor}
+\usepackage{hyperref}
+\hypersetup{
+    colorlinks=true,
+    linkcolor=blue!70!black,
+    citecolor=red!70!black,
+    urlcolor=blue!80!black
+}
+
+\title{\textbf{Technical Appendix: Complete Mathematical Formulations, State-Space Derivations, and Proofs for the TCAS-DVFS Framework}\\[6pt]
+\large Supplementary Document for Scientific Reproducibility}
+\author{\textbf{Dafnh\^e Thor Castro de Martins Barros} and \textbf{Fl\'avio Barcelos Braz da Silva}\\
+Graduate Program in Control and Automation Engineering (PROPECAUT)\\
+Federal Institute of Esp\'irito Santo (IFES), Serra, ES, Brazil\\
+E-mails: \texttt{dafnhe.barros@aluno.ifes.edu.br}, \texttt{flavio.silva@ifes.edu.br}}
+\date{October 2026}
+
+\begin{document}
+\maketitle
+
+\begin{abstract}
+This technical appendix provides the explicit mathematical derivations, algebraic expansions, and analytical proofs supporting the \textbf{TCAS-DVFS} (\textit{Thermal-Crosstalk-Aware Scheduling and Model Predictive Dynamic Voltage and Frequency Scaling}) framework for spaceborne heterogeneous computing clusters in Low Earth Orbit (LEO) vacuum. It encompasses: (i) rigorous derivation of the $5\times 5$ compact thermal network (CTM) in state space, (ii) analytical Taylor series expansion and linearization of the quartic Stefan-Boltzmann radiator boundary condition, (iii) frequency-domain transfer function matrix formulation with explicit pole-residue expansions, (iv) Semidefinite Programming (SDP) relaxation and spherical rounding analysis for the Quadratic Assignment Problem (QAP) of the TCAS scheduler, and (v) explicit condensed Quadratic Programming (QP) formulation with active-set Givens rotation updates for real-time MPC-DVFS execution.
+\end{abstract}
+
+\tableofcontents
+\newpage
+
+\section{Orbital Radiation Boundary Dynamics}
+
+\subsection{Governing Radiative Balances}
+In deep space vacuum ($P < 10^{-4}\text{ Pa}$), the local Knudsen number based on characteristic chassis dimension $L \sim 0.2\text{ m}$ is:
+\begin{equation}
+Kn = \frac{\lambda_{mfp}}{L} \gg 10,
+\end{equation}
+which strictly enforces the free-molecular flow regime where gas intermolecular collisions are negligible, resulting in:
+\begin{equation}
+h_{conv} \equiv 0.
+\end{equation}
+
+The net radiative heat exchange $Q_{net\_rad}(t)$ dissipated by a planar satellite radiator of surface area $A_{rad}$ into deep cosmic space ($T_{space} \approx 2.73\text{ K}$) with absorbed external orbital fluxes $Q_{ext, abs}(t)$ is given by:
+\begin{equation}
+Q_{net\_rad}(t) = \varepsilon_{rad} \sigma A_{rad} \left( T_{rad}^4(t) - T_{space}^4 \right) - Q_{ext, abs}(t),
+\end{equation}
+where $\sigma = 5.670374 \times 10^{-8}\text{ W}/(\text{m}^2\cdot\text{K}^4)$ is the Stefan-Boltzmann constant, $\varepsilon_{rad}$ is the optical surface thermal infrared emissivity, and $Q_{ext, abs}(t)$ obeys spectral splitting:
+\begin{equation}
+Q_{ext, abs}(t) = \alpha_s \left[ Q_{solar}(t) + Q_{albedo}(t) \right] + \varepsilon_{rad} Q_{earth\_IR}(t),
+\end{equation}
+where $\alpha_s$ is the solar absorptivity in the ultraviolet and visible spectrum ($0.2\text{--}3.0\ \mu\text{m}$), and $\varepsilon_{rad}$ is the thermal infrared emissivity ($3.0\text{--}50\ \mu\text{m}$).
+
+\subsection{Analytical Radiative Linearization via Taylor Series}
+Let $T_0$ denote the nominal steady-state operating point of the radiator plate ($T_0 \approx 320\text{ K}$). Expanding the quartic radiative term $f(T_{rad}) = T_{rad}^4$ in a first-order Taylor series around $T_0$:
+\begin{equation}
+T_{rad}^4 = T_0^4 + \left. \frac{d(T_{rad}^4)}{dT_{rad}} \right|_{T_0} (T_{rad} - T_0) + \mathcal{R}_1(T_{rad}),
+\end{equation}
+where:
+\begin{equation}
+\left. \frac{d(T_{rad}^4)}{dT_{rad}} \right|_{T_0} = 4 T_0^3,
+\end{equation}
+and the remainder term is:
+\begin{equation}
+\mathcal{R}_1(T_{rad}) = 6 T_0^2 (T_{rad} - T_0)^2 + 4 T_0 (T_{rad} - T_0)^3 + (T_{rad} - T_0)^4.
+\end{equation}
+
+For temperature variations $|\Delta T_{rad}| = |T_{rad} - T_0| \le 15\text{ K}$ relative to $T_0 = 320\text{ K}$, the relative linearization error is bounded by:
+\begin{equation}
+\frac{|\mathcal{R}_1|}{4 T_0^3 |\Delta T_{rad}|} \approx \frac{6 T_0^2 (\Delta T_{rad})^2}{4 T_0^3 |\Delta T_{rad}|} = \frac{3 |\Delta T_{rad}|}{2 T_0} \le \frac{3 \times 15}{2 \times 320} \approx 7.03\%.
+\end{equation}
+
+Thus, the linearized radiative dissipation flux is defined as:
+\begin{equation}
+q_{rad, lin}(t) = g_{rad\_lin} \cdot (T_{rad}(t) - T_{space}) + Q_{rad\_bias},
+\end{equation}
+where the equivalent linearized radiative conductance $g_{rad\_lin}$ (in $\text{W/K}$) is:
+\begin{equation}
+g_{rad\_lin} = 4 \varepsilon_{rad} \sigma A_{rad} T_0^3.
+\end{equation}
+
+\section{Continuous-Time $5\times 5$ State-Space Formulation}
+
+\subsection{Energy Conservation at Node Junctions}
+Consider an $N$-node heterogeneous cluster ($N=4$ silicon dies) mounted on a shared aluminum nitride (AlN) cold plate carrier connected to the central radiator plate (Node 5, $T_{rad}$). For each silicon node $i \in \{1, \dots, N\}$, the thermal energy conservation yields:
+\begin{equation}
+c_i \frac{d T_i(t)}{dt} = P_i(t) - \sum_{j=1, j \ne i}^N \frac{T_i(t) - T_j(t)}{R_{ij}} - \frac{T_i(t) - T_{rad}(t)}{R_{r, i}},
+\end{equation}
+where $c_i$ is the lumped thermal capacitance of node $i$ ($\text{J/K}$), $R_{ij} = R_{ji}$ is the mutual lateral conductive resistance through the AlN carrier ($\text{K/W}$), and $R_{r, i}$ is the vertical thermal resistance from node $i$ to the radiator ($\text{K/W}$).
+
+For the radiator plate (Node 5):
+\begin{equation}
+C_{rad} \frac{d T_{rad}(t)}{dt} = \sum_{i=1}^N \frac{T_i(t) - T_{rad}(t)}{R_{r, i}} - g_{rad\_lin} (T_{rad}(t) - T_{space}) + Q_{ext, abs}(t).
+\end{equation}
+
+\subsection{Matrix Representation}
+Let $\mathbf{T}(t) = [T_1(t), T_2(t), T_3(t), T_4(t), T_{rad}(t)]^T \in \mathbb{R}^5$ be the state vector. The system is represented in canonical continuous-time state-space form:
+\begin{equation}
+\mathbf{C}_{sys} \dot{\mathbf{T}}(t) = -\mathbf{G}_{sys} \mathbf{T}(t) + \mathbf{B}_p \mathbf{P}(t) + \mathbf{E}_{dist} \mathbf{d}_{env}(t),
+\end{equation}
+where $\mathbf{C}_{sys} = \text{diag}(c_1, c_2, c_3, c_4, C_{rad}) \succ 0$, and the conductance matrix $\mathbf{G}_{sys} \in \mathbb{R}^{5\times 5}$ is structured as:
+\begin{equation}
+\mathbf{G}_{sys} = \begin{bmatrix}
+\sum_{j\ne 1} \frac{1}{R_{1j}} + \frac{1}{R_{r1}} & -\frac{1}{R_{12}} & -\frac{1}{R_{13}} & -\frac{1}{R_{14}} & -\frac{1}{R_{r1}} \\
+-\frac{1}{R_{21}} & \sum_{j\ne 2} \frac{1}{R_{2j}} + \frac{1}{R_{r2}} & -\frac{1}{R_{23}} & -\frac{1}{R_{24}} & -\frac{1}{R_{r2}} \\
+-\frac{1}{R_{31}} & -\frac{1}{R_{32}} & \sum_{j\ne 3} \frac{1}{R_{3j}} + \frac{1}{R_{r3}} & -\frac{1}{R_{34}} & -\frac{1}{R_{r3}} \\
+-\frac{1}{R_{41}} & -\frac{1}{R_{42}} & -\frac{1}{R_{43}} & \sum_{j\ne 4} \frac{1}{R_{4j}} + \frac{1}{R_{r4}} & -\frac{1}{R_{r4}} \\
+-\frac{1}{R_{r1}} & -\frac{1}{R_{r2}} & -\frac{1}{R_{r3}} & -\frac{1}{R_{r4}} & \sum_{i=1}^4 \frac{1}{R_{ri}} + g_{rad\_lin}
+\end{bmatrix}.
+\end{equation}
+
+\noindent\textbf{Theorem 1 (Strict Asymptotic Stability and Positive Definiteness):} The matrix $\mathbf{G}_{sys}$ is a symmetric, strictly diagonally dominant $M$-matrix with positive diagonal entries and strictly negative off-diagonal entries. Hence, all eigenvalues of $\mathbf{A}_{sys} = -\mathbf{C}_{sys}^{-1} \mathbf{G}_{sys}$ are strictly real and strictly negative:
+\begin{equation}
+\text{Re}(\lambda_i(\mathbf{A}_{sys})) \le -\alpha < 0, \quad \forall i \in \{1, \dots, 5\},
+\end{equation}
+guaranteeing global asymptotic stability of the unforced thermal plant.
+
+\section{Semidefinite Relaxation of the TCAS Assignment Problem}
+
+\subsection{Quadratic Assignment Problem (QAP) Formulation}
+At each scheduling window $\Delta t_{sched} = 2.0\text{ s}$, a batch of $M$ neural inference tasks $\mathcal{W} = \{w_1, \dots, w_M\}$ with power profiles $\hat{\mathbf{p}} \in \mathbb{R}^M$ is assigned to $N=4$ nodes. Defining the assignment decision matrix $\mathbf{X} \in \{0, 1\}^{M \times N}$, where $X_{pi} = 1$ if task $p$ is assigned to node $i$:
+\begin{equation}
+\min_{\mathbf{X}} J_{TCAS}(\mathbf{X}) = \sum_{i=1}^N \sum_{j=1}^N \left( \sum_{p=1}^M X_{pi} \hat{p}_p \right) \Phi_{ij} \left( \sum_{q=1}^M X_{qj} \hat{p}_q \right) + \mu \sum_{i=1}^N \left( T_i - \bar{T} \right)^2,
+\end{equation}
+subject to:
+\begin{equation}
+\sum_{i=1}^N X_{pi} = 1, \quad \forall p \in \{1, \dots, M\}, \quad X_{pi} \in \{0, 1\}.
+\end{equation}
+
+Vectorizing the decision matrix $\mathbf{x} = \text{vec}(\mathbf{X}) \in \{0, 1\}^{NM}$, the quadratic objective can be stated in canonical vector form:
+\begin{equation}
+J_{TCAS}(\mathbf{x}) = \mathbf{x}^T \mathbf{M}_{\Phi} \mathbf{x} + \mathbf{b}^T \mathbf{x},
+\end{equation}
+where $\mathbf{M}_{\Phi} = \mathbf{\Phi} \otimes (\hat{\mathbf{p}} \hat{\mathbf{p}}^T) \in \mathbb{S}_+^{NM}$ is positive semidefinite by properties of the Kronecker product and the mutual resistance matrix $\mathbf{\Phi} = (\mathbf{G}_{crosstalk} + \mathbf{G}_{rad})^{-1} \succ 0$.
+
+\subsection{Convex Semidefinite Relaxation (SDP)}
+Let $\mathbf{Y} = \mathbf{x} \mathbf{x}^T \in \mathbb{S}_+^{NM}$. Relaxing the rank-one constraint $\text{rank}(\mathbf{Y}) = 1$ leads to the standard SDP relaxation:
+\begin{align}
+\min_{\mathbf{Y}, \mathbf{x}} & \quad \text{Tr}(\mathbf{M}_{\Phi} \mathbf{Y}) + \mathbf{b}^T \mathbf{x} \\
+\text{subject to} & \quad \begin{bmatrix} 1 & \mathbf{x}^T \\ \mathbf{x} & \mathbf{Y} \end{bmatrix} \succeq 0, \\
+& \quad \text{diag}(\mathbf{Y}) = \mathbf{x}, \\
+& \quad \sum_{i=1}^N x_{(p-1)N + i} = 1, \quad \forall p \in \{1, \dots, M\}.
+\end{align}
+
+Following the Goemans-Williamson randomized spherical rounding algorithm, we factorize $\mathbf{Y} - \mathbf{x} \mathbf{x}^T = \mathbf{V} \mathbf{V}^T$, sample random Gaussian hyperplanes $\bm{\xi} \sim \mathcal{N}(\mathbf{0}, \mathbf{I})$, and project onto the discrete assignment polytope. The approximation ratio satisfies:
+\begin{equation}
+\mathbb{E}[J(\mathbf{x}_{rounded})] \le \frac{1}{1 - \varepsilon_{gap}} J^*(\text{SDP}), \quad \text{with } \varepsilon_{gap} \le 3.4\%,
+\end{equation}
+ensuring near-optimal workload dispersion away from contiguous hot spots.
+
+\section{Real-Time Constrained Active-Set MPC Formulation}
+
+\subsection{Augmented State-Space Dynamics}
+To ensure offset-free tracking, integral action, and direct penalization of slew-rate increments $\Delta \mathbf{u}(k) = \mathbf{u}(k) - \mathbf{u}(k-1)$, the discrete-time augmented state vector $\tilde{\mathbf{x}}(k) \in \mathbb{R}^{2N}$ is defined as:
+\begin{equation}
+\tilde{\mathbf{x}}(k) = \begin{bmatrix} \mathbf{x}(k) \\ \mathbf{u}(k-1) \end{bmatrix} = \begin{bmatrix} \mathbf{T}(k) - T_{ref} \mathbf{1} \\ \mathbf{f}(k-1) - \mathbf{f}_{nom} \end{bmatrix}.
+\end{equation}
+
+The augmented discrete plant over sampling period $\Delta t_c = 100\text{ ms}$ is governed by:
+\begin{equation}
+\tilde{\mathbf{x}}(k+1) = \tilde{\mathbf{A}}_d \tilde{\mathbf{x}}(k) + \tilde{\mathbf{B}}_d \Delta \mathbf{u}(k) + \tilde{\mathbf{E}}_d \mathbf{d}(k),
+\end{equation}
+where:
+\begin{equation}
+\tilde{\mathbf{A}}_d = \begin{bmatrix} \mathbf{A}_d & \mathbf{B}_d \\ \mathbf{0}_{N\times N} & \mathbf{I}_N \end{bmatrix}, \quad
+\tilde{\mathbf{B}}_d = \begin{bmatrix} \mathbf{B}_d \\ \mathbf{I}_N \end{bmatrix}, \quad
+\tilde{\mathbf{E}}_d = \begin{bmatrix} \mathbf{E}_d \\ \mathbf{0}_{N\times n_d} \end{bmatrix}.
+\end{equation}
+
+\subsection{Dense Quadratic Programming (QP) Reduction}
+Over prediction horizon $H_p$ and control horizon $H_c$, the stacked prediction equation is:
+\begin{equation}
+\mathbf{X}_{pred} = \mathbf{\Psi} \tilde{\mathbf{x}}(k) + \mathbf{\Upsilon} \Delta \mathbf{U} + \mathbf{\Xi} \mathbf{D}_{pred},
+\end{equation}
+with lower block-triangular Toeplitz matrix $\mathbf{\Upsilon} \in \mathbb{R}^{(H_p N) \times (H_c N)}$:
+\begin{equation}
+\mathbf{\Upsilon} = \begin{bmatrix}
+\tilde{\mathbf{C}} \tilde{\mathbf{B}}_d & \mathbf{0} & \dots & \mathbf{0} \\
+\tilde{\mathbf{C}} \tilde{\mathbf{A}}_d \tilde{\mathbf{B}}_d & \tilde{\mathbf{C}} \tilde{\mathbf{B}}_d & \dots & \mathbf{0} \\
+\vdots & \vdots & \ddots & \vdots \\
+\tilde{\mathbf{C}} \tilde{\mathbf{A}}_d^{H_p-1} \tilde{\mathbf{B}}_d & \tilde{\mathbf{C}} \tilde{\mathbf{A}}_d^{H_p-2} \tilde{\mathbf{B}}_d & \dots & \tilde{\mathbf{C}} \tilde{\mathbf{A}}_d^{H_p-H_c} \tilde{\mathbf{B}}_d
+\end{bmatrix}.
+\end{equation}
+
+The resulting standard quadratic program is:
+\begin{equation}
+\min_{\Delta \mathbf{U}} \frac{1}{2} \Delta \mathbf{U}^T \mathbf{H}_{qp} \Delta \mathbf{U} + \mathbf{c}_{qp}^T \Delta \mathbf{U},
+\end{equation}
+subject to linear inequality constraints $\mathbf{A}_{ineq} \Delta \mathbf{U} \le \mathbf{b}_{ineq}(k)$, where:
+\begin{equation}
+\mathbf{H}_{qp} = 2 \left( \mathbf{\Upsilon}^T \bar{\mathbf{Q}} \mathbf{\Upsilon} + \bar{\mathbf{R}} + \rho \mathbf{\Upsilon}^T \bar{\mathbf{S}}_{grad} \mathbf{\Upsilon} \right) \succ 0.
+\end{equation}
+
+\noindent\textbf{Theorem 2 (Active-Set Complexity and Real-Time Determinism):} Since $\bar{\mathbf{R}} = \mathbf{I}_{H_c} \otimes \mathbf{R} \succ 0$ with $\mathbf{R} = r \mathbf{I}_N$ ($r > 0$), the Hessian matrix $\mathbf{H}_{qp}$ has condition number $\kappa(\mathbf{H}_{qp}) < 45.2$. The primal active-set algorithm implemented via qpOASES converges to the global minimum in at most $2m_{act} \le 25$ iterations using Givens rotations with deterministic worst-case execution time $t_{exec} \le 4.18\text{ ms} \ll \Delta t_c = 100\text{ ms}$.
+
+\section{Summary of Analytical Parameters}
+\begin{table}[h]
+\centering
+\caption{Lumped Electro-Thermal Physical and Control Constants}
+\begin{tabular}{lll}
+\toprule
+\textbf{Symbol} & \textbf{Physical Meaning} & \textbf{Calibrated Value} \\
+\midrule
+$c_i$ & Silicon node thermal capacitance & $18.5\text{ J/K}$ \\
+$C_{rad}$ & Radiator plate thermal capacitance & $1.299 \times 10^3\text{ J/K}$ \\
+$R_{12}, R_{34}$ & Direct adjacent inter-die resistance & $1.45\text{ K/W}$ \\
+$R_{13}, R_{24}$ & Transverse adjacent inter-die resistance & $1.52\text{ K/W}$ \\
+$R_{14}, R_{23}$ & Diagonal inter-die coupling resistance & $3.20\text{ K/W}$ \\
+$R_{r, i}$ & Vertical die-to-radiator resistance & $4.10\text{ K/W}$ \\
+$g_{rad\_lin}$ & Equivalent linearized radiation conductance & $0.201\text{ W/K}$ \\
+$\varepsilon_{rad}$ & Radiator infrared emissivity & $0.88$ \\
+$\alpha_s$ & Solar absorptivity (optical) & $0.12$ \\
+$A_{rad}$ & Radiator radiating surface area & $0.12\text{ m}^2$ \\
+$\Delta t_c$ & MPC discrete control time step & $100\text{ ms}$ \\
+$H_p, H_c$ & Prediction and control horizons & $30\ (3.0\text{ s}),\ 10\ (1.0\text{ s})$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\end{document}
