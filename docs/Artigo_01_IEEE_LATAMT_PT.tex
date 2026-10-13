@@ -20,7 +20,7 @@
 
 \begin{document}
 
-\title{Dynamic Voltage and Frequency Scaling and Thermal-Crosstalk-Aware Scheduling for Spaceborne AI Computing Clusters in Vacuum:\\ Approximate Multiphysics Modeling, Predictive Control, and Numerical Simulation}
+\title{Escalonamento Ciente de Diafonia T\'ermica e DVFS Preditivo para Clusters Espaciais de Intelig\^encia Artificial em Alto V\'acuo:\\ Modelagem Multif\'isica Aproximada, Controle Preditivo e Simula\c{c}\~ao Num\'erica}
 
 \author{Dafnh\^e~T.~C.~M.~Barros,~\IEEEmembership{Student Member,~IEEE,}
         and~Fl\'avio~B.~Braz~da~Silva,~\IEEEmembership{Senior Member,~IEEE}%
@@ -45,33 +45,33 @@ CubeSats, dynamic voltage and frequency scaling (DVFS), edge artificial intellig
 \section{Introdução e Definição Abrangente do Problema}
 
 \subsection{A Mudança de Paradigma para IA de Borda Orbital}
-Missões espaciais contemporâneas de observação da Terra (EO)---englobando detecção autônoma de incêndios florestais, monitoramento de rotas marítimas, radar de abertura sintética (SAR) e rastreamento ambiental---demandam o processamento em tempo real de fluxos massivos de dados sensoriais a bordo de pequenos satélites em Órbita Baixa da Terra (LEO)~\cite{denby2020asplos, smith2023edgeai, chen2026sagin}. Historicamente, satélites operavam sob o paradigma de armazenamento e retransmissão (\textit{store-and-forward})~\cite{manson1966fatigue, ecss2020thermal}: os dados brutos eram gravados em memórias sólidas tolerantes a radiação e descarregados para estações terrestres durante passagens efêmeras de visibilidade (tipicamente 8 a 12 minutos por órbita), incorrendo em latências de ponta a ponta frequentemente superiores a 4--12 horas~\cite{denby2020asplos, smith2023edgeai}.
+Missões espaciais contemporâneas de observação da Terra (EO)---englobando detecção autônoma de incêndios florestais, monitoramento de rotas marítimas, radar de abertura sintética (SAR) e rastreamento ambiental---demandam o processamento em tempo real de fluxos massivos de dados sensoriais a bordo de pequenos satélites em Órbita Baixa da Terra (LEO)~\cite{denby2020asplos, garrett2024taes, chen2026sagin}. Historicamente, satélites operavam sob o paradigma de armazenamento e retransmissão (\textit{store-and-forward})~\cite{manson1966fatigue, ecss2008thermal}: os dados brutos eram gravados em memórias sólidas tolerantes a radiação e descarregados para estações terrestres durante passagens efêmeras de visibilidade (tipicamente 8 a 12 minutos por órbita), incorrendo em latências de ponta a ponta frequentemente superiores a 4--12 horas~\cite{denby2020asplos, garrett2024taes}.
 
-Contudo, com sensores hiperespectrais e radares SAR gerando fluxos contínuos de múltiplos gigabits por segundo, a largura de banda de enlace descendente (bandas X e Ka) tornou-se um gargalo físico e logístico intransponível. A computação inteligente de borda em órbita mitiga esse afunilamento ao embarcar aceleradores comerciais de prateleira (COTS) e módulos de computação heterogênea tolerantes a radiação, integrando CPUs ARM multicore, GPUs de alta densidade e Unidades de Processamento Neural (NPUs)~\cite{smith2023edgeai, stough2021onboard}. Ademais, imagens ópticas obstruídas por densas coberturas de nuvens---que representam estatisticamente até $67\%$ das capturas ópticas em nível global~\cite{king2013spatial}---podem ser sumariamente descartadas ou filtradas antes da gravação ou transmissão, liberando enlaces de downlink vitais para dados prioritários~\cite{giuffrida2020phisat1}.
+Contudo, com sensores hiperespectrais e radares SAR gerando fluxos contínuos de múltiplos gigabits por segundo, a largura de banda de enlace descendente (bandas X e Ka) tornou-se um gargalo físico e logístico intransponível. A computação inteligente de borda em órbita mitiga esse afunilamento ao embarcar aceleradores comerciais de prateleira (COTS) e módulos de computação heterogênea tolerantes a radiação, integrando CPUs ARM multicore, GPUs de alta densidade e Unidades de Processamento Neural (NPUs)~\cite{garrett2024taes, sherwood2003ase}. Ademais, imagens ópticas obstruídas por densas coberturas de nuvens---que representam estatisticamente até $67\%$ das capturas ópticas em nível global~\cite{king2013spatial}---podem ser sumariamente descartadas ou filtradas antes da gravação ou transmissão, liberando enlaces de downlink vitais para dados prioritários~\cite{giuffrida2021phisat1}.
 
 \subsection{Termodinâmica do Vácuo Espacial}
-Enquanto centros de dados terrestres empregam resfriamento por convecção forçada de ar ($h \approx 20\text{--}100\text{ W/(m}^2\text{K)}$) ou circuitos fechados de refrigeração líquida ($h \approx 1.000\text{--}10.000\text{ W/(m}^2\text{K)}$)~\cite{incropera2011fundamentals}, a infraestrutura orbital opera imersa em ultra-alto vácuo ($P < 10^{-4}\text{ Pa}$)~\cite{nasa2022handbook, gilmore2021handbook}. Nesse regime rarefeito de escoamento molecular livre ($Kn \gg 10$), o coeficiente de convecção é rigorosamente nulo:
+Enquanto centros de dados terrestres empregam resfriamento por convecção forçada de ar ($h \approx 20\text{--}100\text{ W/(m}^2\text{K)}$) ou circuitos fechados de refrigeração líquida ($h \approx 1.000\text{--}10.000\text{ W/(m}^2\text{K)}$)~\cite{incropera2011fundamentals}, a infraestrutura orbital opera imersa em ultra-alto vácuo ($P < 10^{-4}\text{ Pa}$)~\cite{nasa2022handbook, gilmore2002handbook}. Nesse regime rarefeito de escoamento molecular livre ($Kn \gg 10$), o coeficiente de convecção é rigorosamente nulo:
 \begin{equation}
 h \equiv 0.
 \end{equation}
 
-Consequentemente, todo calor dissipado pelas junções de silício deve ser evacuado exclusivamente através de dois estágios estritos~\cite{ecss2020thermal, gilmore2021handbook}:
+Consequentemente, todo calor dissipado pelas junções de silício deve ser evacuado exclusivamente através de dois estágios estritos~\cite{ecss2008thermal, gilmore2002handbook}:
 \begin{enumerate}
-    \item \textbf{Condução Sólida Interna:} A resistência térmica transversal conduz o calor verticalmente das microjunções através de materiais de interface térmica (TIM-1, TIM-2) e dissipadores para uma placa fria condutiva compartilhada (Al 6061-T6 ou nitreto de alumínio AlN com $k \approx 170\text{--}200\text{ W/(m}\cdot\text{K)}$)~\cite{nasa2022handbook, ecss2020thermal}.
-    \item \textbf{Radiação Eletromagnética Externa:} O calor acumulado no chassi é rejeitado por radiadores de superfície externa para o espaço profundo ($T_{space} \approx 3\text{ K}$), governado pela lei não linear de Stefan-Boltzmann ($q_{rad} \propto \varepsilon \sigma T^4$)~\cite{incropera2011fundamentals, groothuis2021radiator}.
+    \item \textbf{Condução Sólida Interna:} A resistência térmica transversal conduz o calor verticalmente das microjunções através de materiais de interface térmica (TIM-1, TIM-2) e dissipadores para uma placa fria condutiva compartilhada (Al 6061-T6 ou nitreto de alumínio AlN com $k \approx 170\text{--}200\text{ W/(m}\cdot\text{K)}$)~\cite{nasa2022handbook, ecss2008thermal}.
+    \item \textbf{Radiação Eletromagnética Externa:} O calor acumulado no chassi é rejeitado por radiadores de superfície externa para o espaço profundo ($T_{space} \approx 3\text{ K}$), governado pela lei não linear de Stefan-Boltzmann ($q_{rad} \propto \varepsilon \sigma T^4$)~\cite{incropera2011fundamentals, pederson2024radiator}.
 \end{enumerate}
 
 \subsection{Empacotamento Denso e Diafonia Térmica Espacial}
-Restrições extremas de massa ($< 20\text{ kg}$) e volume em CubeSats 6U--12U forçam múltiplos System-on-Modules (SoMs) COTS sobre uma única placa fria estrutural~\cite{nasa2022handbook}. Aceleradores de IA de borda dissipam tipicamente de 10 a 25~W por nó (e.g., perfis NVIDIA Jetson Orin NX)~\cite{bertran2022islped}. A operação concorrente de 4 nós demanda de 60 a 100~W, sobrecarregando severamente o Sistema de Suprimento de Energia Elétrica (EPS) da plataforma.
+Restrições extremas de massa ($< 20\text{ kg}$) e volume em CubeSats 6U--12U forçam múltiplos System-on-Modules (SoMs) COTS sobre uma única placa fria estrutural~\cite{nasa2022handbook}. Aceleradores de IA de borda dissipam tipicamente de 10 a 25~W por nó (e.g., perfis NVIDIA Jetson Orin NX)~\cite{ortiz2024spirit}. A operação concorrente de 4 nós demanda de 60 a 100~W, sobrecarregando severamente o Sistema de Suprimento de Energia Elétrica (EPS) da plataforma.
 
-Alinhado a essas restrições, quando um nó de silício (Die 1) dissipa de 15 a 25~W durante inferências intensivas, o fluxo condutivo propaga-se lateralmente pelo carreador compartilhado. Em ensaios numéricos para nós montados com espaçamento inter-die inferior a 35~mm sobre substrato de AlN com resistência de acoplamento mútuo $R_{ij} \approx 0{,}7\text{--}1{,}2\text{ K/W}$, esse fluxo lateral eleva a temperatura de base sob o nó contíguo (Die 2) em um acréscimo de 10 a 18~K em poucas dezenas de segundos~\cite{chen2026hotai, chen2022crosstalk}. Quando o Die 2 recebe subsequentemente uma tarefa de inferência, sua temperatura inicial parte desse patamar térmico sobreaquecido. Esse fenômeno, denominado \textbf{diafonia térmica espacial mútua} (\textit{thermal crosstalk}), estabelece um acoplamento termomecânico cruzado que inviabiliza controles descentralizados clássicos.
+Alinhado a essas restrições, quando um nó de silício (Die 1) dissipa de 15 a 25~W durante inferências intensivas, o fluxo condutivo propaga-se lateralmente pelo carreador compartilhado. Em ensaios numéricos para nós montados com espaçamento inter-die inferior a 35~mm sobre substrato de AlN com resistência de acoplamento mútuo $R_{ij} \approx 0{,}7\text{--}1{,}2\text{ K/W}$, esse fluxo lateral eleva a temperatura de base sob o nó contíguo (Die 2) em um acréscimo de 10 a 18~K em poucas dezenas de segundos~\cite{chen2026hotai, wang2025packaging}. Quando o Die 2 recebe subsequentemente uma tarefa de inferência, sua temperatura inicial parte desse patamar térmico sobreaquecido. Esse fenômeno, denominado \textbf{diafonia térmica espacial mútua} (\textit{thermal crosstalk}), estabelece um acoplamento termomecânico cruzado que inviabiliza controles descentralizados clássicos.
 
 \subsection{Falha dos Governadores Terrestres em Órbita}
 Governadores térmicos convencionais de sistemas operacionais embarcados (como o \textit{ondemand} e \textit{schedutil} do Linux) e controladores clássicos SISO PID colapsam em órbita devido a três fatores físicos essenciais~\cite{brooks2001dtm, skadron2004hotspot, hoffmann2021online}:
 \begin{enumerate}
     \item \textbf{Descompasso de Inércia Térmica:} A capacitância térmica da placa fria e dos radiadores ($C_{th} \approx 10^2\text{--}10^4\text{ J/K}$) gera constantes de tempo ($\tau$) de vários minutos, enquanto diodos térmicos internos respondem em milissegundos~\cite{skadron2004hotspot}. Controladores reativos falham em antecipar o acúmulo de energia térmica no substrato, atuando tardiamente.
     \item \textbf{Oscilação em Dente de Serra:} Quando o limite crítico de segurança ($T_{trip} \approx 368\text{ K}$) é atingido, o governador reduz a frequência abruptamente para o nível mínimo ($f_{min}$), paralisando a inferência de IA. Ao registrar uma ligeira queda de temperatura, o governador retorna à frequência máxima, reativando a saturação térmica em ciclos instáveis de histerese.
-    \item \textbf{Gradientes Térmicos Espaciais Severos ($\nabla T$):} Sob a atuação não coordenada de governadores térmicos terrestres como o Ondemand, a redução assimétrica de potência em dies superaquecidos induz deltas espaciais $\nabla T > 16\text{ K}$ entre dies adjacentes, amplificando tensões de cisalhamento termoelásticas em juntas de solda BGA e interfaces de silício~\cite{manson1966fatigue, ecss2020thermal}.
+    \item \textbf{Gradientes Térmicos Espaciais Severos ($\nabla T$):} Sob a atuação não coordenada de governadores térmicos terrestres como o Ondemand, a redução assimétrica de potência em dies superaquecidos induz deltas espaciais $\nabla T > 16\text{ K}$ entre dies adjacentes, amplificando tensões de cisalhamento termoelásticas em juntas de solda BGA e interfaces de silício~\cite{manson1966fatigue, ecss2008thermal}.
 \end{enumerate}
 
 \begin{figure}[t]
@@ -83,7 +83,7 @@ Governadores térmicos convencionais de sistemas operacionais embarcados (como o
 
 \section{Física Ambiental e Balanço Térmico Orbital}
 
-A dissipação líquida de calor pelo radiador externo~\cite{incropera2011fundamentals, gilmore2021handbook, groothuis2021radiator, ecss2020thermal} de área $A_{rad}$ (Fig.~\ref{fig:geometria_orbital}) é determinada pelo equilíbrio entre a emissão radiativa e as cargas ambientais orbitais:
+A dissipação líquida de calor pelo radiador externo~\cite{incropera2011fundamentals, gilmore2002handbook, pederson2024radiator, ecss2008thermal} de área $A_{rad}$ (Fig.~\ref{fig:geometria_orbital}) é determinada pelo equilíbrio entre a emissão radiativa e as cargas ambientais orbitais:
 \begin{equation}
 Q_{net\_rad}(t) = \varepsilon_{rad} \sigma A_{rad} \left( T_{rad}^4(t) - T_{space}^4 \right) - Q_{ext,abs}(t),
 \end{equation}
@@ -94,7 +94,7 @@ Q_{ext,abs}(t) = \alpha_s \left[ Q_{solar}(t) + Q_{albedo}(t) \right] + \varepsi
 sendo $\alpha_s \approx 0{,}12$ a absortividade óptica solar do revestimento térmico.
 
 \subsection{Cargas Radiativas Orbitais em LEO}
-Durante a porção iluminada da órbita SSO de 500~km (altitude e período calibrados segundo NASA-HDBK-7009A~\cite{nasa2022handbook} e ECSS-E-ST-31C~\cite{ecss2020thermal}), a incidência direta solar é governada por:
+Durante a porção iluminada da órbita SSO de 500~km (altitude e período calibrados segundo NASA-HDBK-7009A~\cite{nasa2022handbook} e ECSS-E-ST-31C~\cite{ecss2008thermal}), a incidência direta solar é governada por:
 \begin{equation}
 Q_{solar}(t) = A_{rad} S_{solar} \cos(\theta_{sun}(t)) \cdot \mathbb{I}_{sunlit}(t),
 \end{equation}
@@ -102,7 +102,10 @@ onde $S_{solar} \approx 1361\text{ W/m}^2$, $\theta_{sun}(t)$ é o ângulo zenit
 
 O fluxo de albedo terrestre, refletido pela atmosfera e calotas de nuvens, é dado por:
 \begin{equation}
-Q_{albedo}(t) = A_{rad} a_E S_{solar} F_{rad \to earth}(t) \cos(\theta_{sub\_solar}(t)) \cdot \mathbb{I}_{sunlit}(t),
+\begin{split}
+Q_{albedo}(t) = & A_{rad} a_E S_{solar} F_{rad \to earth}(t) \\
+& \cdot \cos(\theta_{sub\_solar}(t)) \cdot \mathbb{I}_{sunlit}(t),
+\end{split}
 \end{equation}
 com coeficiente planetário $a_E \approx 0{,}30$ e fator de forma geométrico radiativo $F_{rad \to earth}(t)$. A emissão planetária contínua de corpo negro no infravermelho térmico satisfaz:
 \begin{equation}
@@ -150,13 +153,14 @@ V_i(t) \ge V_{min} + \beta \cdot f_i(t).
 
 A potência de fuga estática cresce exponencialmente com a temperatura de junção $T_i(t)$:
 \begin{align}
-I_{leak, i}(t) &= I_0 \left( \frac{T_i(t)}{T_0} \right)^2 \exp\left( \frac{-q(V_{th} - \gamma V_i(t))}{k_B T_i(t)} \right) + I_{tunnel}, \\
+I_{leak, i}(t) &= I_0 \left( \frac{T_i(t)}{T_0} \right)^2 \exp\left[ \frac{-q(V_{th} - \gamma V_i(t))}{k_B T_i(t)} \right] \nonumber \\
+&\quad + I_{tunnel}, \\
 P_{leak, i}(t) &= V_i(t) \cdot I_{leak, i}(t).
 \end{align}
 Como $\frac{\partial P_{leak}}{\partial T_i} > 0$, variações térmicas positivas desencadeiam realimentação destrutiva, culminando em colapso térmico catastrófico (\textit{thermal runaway}) no vácuo caso não haja intervenção ativa.
 
 \subsection{Equações da Rede Térmica Compacta (CTM)}
-Discretizando o cluster de $N$ nós em uma rede térmica nodal compacta (CTM)~\cite{skadron2004hotspot, chen2022crosstalk, chen2026hotai, nasa2022handbook}:
+Discretizando o cluster de $N$ nós em uma rede térmica nodal compacta (CTM)~\cite{skadron2004hotspot, wang2025packaging, chen2026hotai, nasa2022handbook}:
 \begin{equation}
 c_i \frac{d T_i(t)}{dt} = P_i(t) - \sum_{j \ne i}^N \frac{T_i(t) - T_j(t)}{R_{ij}} - \frac{T_i(t) - T_{rad}(t)}{R_{r, i}}.
 \end{equation}
@@ -212,7 +216,7 @@ sujeito às restrições de completude e temporais:
 Vetorizando a decisão em $\mathbf{x} = \text{vec}(\mathbf{X}) \in \{0, 1\}^{NM}$, obtém-se a forma quadrática $\mathbf{x}^T \mathbf{M}_{\Phi} \mathbf{x}$, onde $\mathbf{M}_{\Phi} = \mathbf{\Phi} \otimes \mathbf{P}_{tasks}$. Relaxando o problema inteiro sobre o cone semidefinido $\mathbb{S}_+^{NM+1}$ com arredondamento probabilístico em hiperplanos esféricos~\cite{boyd2004convex}, obtém-se um gap de otimalidade inferior a $3{,}4\%$, direcionando cargas térmicas severas para nós diagonalmente opostos.
 
 \subsection{Controlador Preditivo Multivariável (MPC-DVFS)}
-Para assegurar estabilidade assintótica, suprimir gradientes espaciais e respeitar os limites de modulação de clock~\cite{lesueur2010dvfs, atienza2008thermal, zhang2023predictive, hoffmann2021online}, formula-se o MPC discreto com horizonte deslizante.
+Para assegurar estabilidade assintótica, suprimir gradientes espaciais e respeitar os limites de modulação de clock~\cite{lesueur2010dvfs, murali2007convex, yuan2025heat, hoffmann2021online}, formula-se o MPC discreto com horizonte deslizante.
 
 Definindo o estado aumentado $\tilde{\mathbf{x}}(k) = [\mathbf{x}(k)^T, \mathbf{u}(k-1)^T]^T \in \mathbb{R}^{2N}$ (sendo $\mathbf{x}(k) = \mathbf{T}(k) - T_{safe} \mathbf{1}$ o desvio térmico) e os incrementos de controle $\Delta \mathbf{u}(k) = \mathbf{u}(k) - \mathbf{u}(k-1)$, a dinâmica aumentada discreta em $\Delta t_c = 100\text{ ms}$ satisfaz:
 \begin{equation}
@@ -240,7 +244,7 @@ A matriz Hessiana condensada do QP:
 \end{equation}
 é estritamente definida positiva ($\mathbf{H}_{qp} \succ 0$) pela imposição $\bar{\mathbf{R}} \succ 0$, assegurando unicidade e convexidade global. A atualização das matrizes de Cholesky é executada por rotações de Givens com complexidade $\mathcal{O}(m^2)$, consumindo no pior caso 25 iterações~\cite{ferreau2014qpoases}. Em um microcontrolador de instrumentação de voo ARM Cortex-R5 operando a 400~MHz, o tempo de execução do solver foi cronometrado em no máximo $4{,}18\text{ ms}$, consumindo apenas $4{,}18\%$ do período de amostragem de $100\text{ ms}$.
 
-Na instrumentação de voo real, as temperaturas internas de canal dos transistores microscópicos não podem ser acessadas diretamente por pontas de prova, sendo inferidas a partir de diodos térmicos periféricos sujeitos a ruído de quantização digital e atrasos de transporte térmico através do encapsulamento~\cite{zhang2012kalman}. Para prover estimativas ótimas não tendenciosas do estado de temperatura $\mathbf{x}(k)$ ao algoritmo MPC-DVFS, sintetizou-se um Filtro de Kalman Estendido (EKF) em tempo discreto com correção de covariância em forma de Joseph~\cite{simon2006optimal}.
+Na instrumentação de voo real, as temperaturas internas de canal dos transistores microscópicos não podem ser acessadas diretamente por pontas de prova, sendo inferidas a partir de diodos térmicos periféricos sujeitos a ruído de quantização digital e atrasos de transporte térmico através do encapsulamento~\cite{zhang2011tvlsi}. Para prover estimativas ótimas não tendenciosas do estado de temperatura $\mathbf{x}(k)$ ao algoritmo MPC-DVFS, sintetizou-se um Filtro de Kalman Estendido (EKF) em tempo discreto com correção de covariância em forma de Joseph~\cite{simon2006optimal}.
 
 \section{Metodologia de Simulação Multifísica}
 
@@ -253,12 +257,12 @@ Na instrumentação de voo real, as temperaturas internas de canal dos transisto
 
 O ambiente de simulação multifísica (Fig.~\ref{fig:fluxo_cosimulacao}) integra:
 \begin{enumerate}
-    \item \textbf{Cluster Computacional Heterogêneo:} Quatro módulos NVIDIA Jetson Orin~\cite{bertran2022islped} dispostos em matriz $2 \times 2$ sobre carreador de AlN ($k = 180\text{ W/(m}\cdot\text{K)}$). Cada nó modela 8 núcleos ARM Cortex-A78AE e uma GPU Ampere (2048 núcleos CUDA, 64 Tensor Cores), calibrados segundo perfis \textit{nvpmodel} (10~W a 25~W).
-    \item \textbf{Dinâmica Térmica e Orbital Acoplada:} Integração numérica orbital SSO de 500~km acoplada à condução térmica 3D calibrada segundo normas NASA-HDBK-7009A~\cite{nasa2022handbook} e ECSS-E-ST-31C~\cite{ecss2020thermal} ($R_{12} = R_{34} = 1{,}45\text{ K/W}$, $R_{13} = R_{24} = 1{,}52\text{ K/W}$, diagonal $R_{14} = R_{23} = 3{,}20\text{ K/W}$; $A_{rad} = 0{,}12\text{ m}^2$).
+    \item \textbf{Cluster Computacional Heterogêneo:} Quatro módulos NVIDIA Jetson Orin~\cite{ortiz2024spirit} dispostos em matriz $2 \times 2$ sobre carreador de AlN ($k = 180\text{ W/(m}\cdot\text{K)}$). Cada nó modela 8 núcleos ARM Cortex-A78AE e uma GPU Ampere (2048 núcleos CUDA, 64 Tensor Cores), calibrados segundo perfis \textit{nvpmodel} (10~W a 25~W).
+    \item \textbf{Dinâmica Térmica e Orbital Acoplada:} Integração numérica orbital SSO de 500~km acoplada à condução térmica 3D calibrada segundo normas NASA-HDBK-7009A~\cite{nasa2022handbook} e ECSS-E-ST-31C~\cite{ecss2008thermal} ($R_{12} = R_{34} = 1{,}45\text{ K/W}$, $R_{13} = R_{24} = 1{,}52\text{ K/W}$, diagonal $R_{14} = R_{23} = 3{,}20\text{ K/W}$; $A_{rad} = 0{,}12\text{ m}^2$).
     \item \textbf{Emulação de Telemetria:} Leitura de temperatura amostrada a 100~Hz com ruído de quantização gaussiano ($\sigma = 0{,}25\text{ K}$) e monitoramento de potência dos trilhos a 1~kHz.
     \item \textbf{Cargas de Trabalho de Borda Espacial:}
     \begin{itemize}
-        \item \textbf{Cloud-Seg:} Segmentação óptica de nuvens DeepLabV3+ (ResNet-50)~\cite{giuffrida2020phisat1, stough2021onboard} ($512 \times 512$).
+        \item \textbf{Cloud-Seg:} Segmentação óptica de nuvens DeepLabV3+ (ResNet-50)~\cite{giuffrida2021phisat1, sherwood2003ase} ($512 \times 512$).
         \item \textbf{SAR-YOLO:} Detecção de embarcações marítimas por radar SAR via YOLOv8x.
         \item \textbf{Hyper-ViT:} Classificação hiperespectral em 204 bandas com Vision Transformer compacto (ViT-Tiny).
     \end{itemize}
@@ -286,12 +290,12 @@ O desempenho do \textbf{TCAS-DVFS} foi comparado com quatro governadores basais:
 
 \begin{figure*}[t]
 \centering
-\includegraphics[width=0.85\textwidth]{figuras/Gemini_Generated_Image_Figura09.jpg}
+\includegraphics[width=0.88\textwidth]{figuras/figura5_orbital_transient_PT.png}
 \caption{Resposta térmica transitória e vazão útil ao longo de 3 órbitas LEO consecutivas (284~minutos, 34.009 passos temporais): (A) Temperatura máxima de junção ($T_{\max}$), evidenciando o runaway sob Linux Ondemand e Global Power Cap, ciclos de histerese sob Thermal Throttling e contenção isotérmica estável sob TCAS-DVFS estritamente limitada a $83{,}89^\circ\text{C}$; (B) Vazão útil sustentada em FPS com detalhes de supressão de gradiente ($\Delta T_{\text{esp}} = 1{,}63\text{ K}$, atenuação de $83{,}7\%$) e Produto Energia-Atraso (EDP).}
 \label{fig:trajetorias_3_orbitas}
 \end{figure*}
 
-Os resultados consolidados ao longo de 3 órbitas completas (Fig.~\ref{fig:trajetorias_3_orbitas}) estão estruturados na Tabela~\ref{tab:results_completo} e Tabela~\ref{tab:benchmarks_workload}. Em contraste com estudos convencionais de computação orbital onde limites térmicos impõem paralisações intermitentes severas~\cite{denby2020asplos, smith2023edgeai}, a abordagem proposta mantém estabilidade térmica e alta vazão sem descontinuidades.
+Os resultados consolidados ao longo de 3 órbitas completas (Fig.~\ref{fig:trajetorias_3_orbitas}) estão estruturados na Tabela~\ref{tab:results_completo} e Tabela~\ref{tab:benchmarks_workload}. Em contraste com estudos convencionais de computação orbital onde limites térmicos impõem paralisações intermitentes severas~\cite{denby2020asplos, garrett2024taes}, a abordagem proposta mantém estabilidade térmica e alta vazão sem descontinuidades.
 
 \begin{table*}[t]
 \centering
@@ -346,23 +350,23 @@ Os resultados consolidados ao longo de 3 órbitas completas (Fig.~\ref{fig:traje
 
 \begin{figure}[t]
 \centering
-\includegraphics[width=0.85\columnwidth]{figuras/Gemini_Generated_Image_Figura14.jpg}
-\caption{Comparação conceitual entre governadores basais (Linux Ondemand, Thermal Throttling, Space-PID, Global Power Cap) e o arcabouço preditivo TCAS-DVFS: eliminação de runaway no vácuo, supressão de $83{,}7\%$ em gradientes de acoplamento inter-die, zero violações orbitais e preservação da vida útil estrutural.}
-\label{fig:comparativo_estrutural}
+\includegraphics[width=0.98\columnwidth]{figuras/figura6_trajetorias_termicas_PT.png}
+\caption{Trajetórias térmicas transitórias inter-die ao longo de três órbitas LEO de 500~km ($16.038\text{ s}$): (a) Descontrole térmico e runaway sob governadores clássicos terrestres (Ondemand atinge $412{,}3^\circ\text{C}$ e Power Cap $142{,}7^\circ\text{C}$); (b) Severa histerese e oscilações sob Thermal Throttling e Space-PID; (c) Estabilização convexa preditiva ótima sob TCAS-DVFS com zero violações e pico contido estritamente em $83{,}89^\circ\text{C}$.}
+\label{fig:trajetorias_termicas}
 \end{figure}
 
-Sob governadores não coordenados (Fig.~\ref{fig:comparativo_estrutural}), a concentração de inferência no Die 1 induziu severos gradientes de acoplamento. A incorporação do termo penalizador $\|\mathbf{L}_{grad} \mathbf{T}\|_{\mathbf{S}}^2$ no MPC-DVFS e a dispersão física de tarefas via TCAS suprimiram os diferenciais espaciais para $\Delta T_{\text{esp}} = \mathbf{1{,}63\text{ K}}$, representando uma redução de \textbf{83,7\%} frente ao Thermal Throttling ($9{,}99\text{ K}$).
+Sob governadores não coordenados (Fig.~\ref{fig:trajetorias_termicas}), a concentração de inferência no Die 1 induziu severos gradientes de acoplamento. A incorporação do termo penalizador $\|\mathbf{L}_{grad} \mathbf{T}\|_{\mathbf{S}}^2$ no MPC-DVFS e a dispersão física de tarefas via TCAS suprimiram os diferenciais espaciais para $\Delta T_{\text{esp}} = \mathbf{1{,}63\text{ K}}$, representando uma redução de \textbf{83,7\%} frente ao Thermal Throttling ($9{,}99\text{ K}$).
 
 \subsection{Vazão e Eficiência Energética}
 
 \begin{figure}[t]
 \centering
-\includegraphics[width=0.85\columnwidth]{figuras/Gemini_Generated_Image_Figura15.jpg}
-\caption{Síntese dos ganhos consolidados obtidos pelo arcabouço TCAS-DVFS nas quatro dimensões físicas: segurança térmica absoluta (zero violações e prevenção de runaway), estabilidade de vazão computacional ($110{,}82\text{ FPS}$ sustentados), contenção eficiente do EDP ($8{,}41\text{ kJ}\cdot\text{s}$, redução de $38{,}9\%$) e ampla extensão de confiabilidade física elétrica/mecânica.}
-\label{fig:sintese_4_dimensoes}
+\includegraphics[width=0.98\columnwidth]{figuras/figura7_gradiente_espacial_PT.png}
+\caption{Supressão dinâmica do gradiente térmico espacial inter-die ($\Delta T_{\text{esp}} = \max T_i - \min T_i$) ao longo do regime orbital: Throttling oscila com média de $9{,}99\text{ K}$ (picos de $15\text{ K}$), enquanto o TCAS-DVFS amortece as assimetrias condutivas para apenas $1{,}63\text{ K}$, representando uma atenuação contínua de $83{,}7\%$.}
+\label{fig:gradiente_espacial}
 \end{figure}
 
-A eliminação dos regimes de histerese e estrangulamento (Fig.~\ref{fig:sintese_4_dimensoes}) propiciou:
+A eliminação dos regimes de histerese e estrangulamento (Fig.~\ref{fig:gradiente_espacial}) propiciou:
 \begin{enumerate}
     \item \textbf{Estabilidade e Vazão Sustentada:} Vazão média de \textbf{110,82~FPS} operando em frequência média de $0{,}672\text{ GHz}$, com absoluta regularidade temporal, eliminando cortes intermitentes.
     \item \textbf{Prevenção de Runaway:} Enquanto o Ondemand e o Power Cap entraram em colapso por acúmulo radiativo no vácuo ($16.038\text{ s}$ e $15.410\text{ s}$ acima do teto seguro de $85^\circ\text{C}$), o TCAS-DVFS obteve \textbf{0,00\% de violações térmicas} com pico absoluto contido em \textbf{83,89$^\circ$C}.
@@ -386,7 +390,7 @@ Comparando a operação sob Throttling ($T_{j, \text{méd}} = 70{,}62^\circ\text
 A contenção dos regimes de pico extremo do Ondemand ($T_{\text{méd}} = 283{,}47^\circ\text{C}$ e pico de $412{,}33^\circ\text{C}$) preserva as linhas de interconexão contra migração atômica catastrófica acelerada por transporte de elétrons.
 
 \subsection{Fadiga Térmica segundo a Relação de Coffin-Manson}
-A fadiga por ciclagem térmica das esferas de solda BGA sob expansão diferencial é quantificada pela relação de Coffin-Manson~\cite{manson1966fatigue, ecss2020thermal}:
+A fadiga por ciclagem térmica das esferas de solda BGA sob expansão diferencial é quantificada pela relação de Coffin-Manson~\cite{manson1966fatigue, ecss2008thermal}:
 \begin{equation}
 N_f = B \cdot (\Delta T_{ciclo})^{-q},
 \end{equation}
@@ -400,7 +404,7 @@ comprovando que a supressão contínua de diafonia e gradientes espaciais blinda
 
 \begin{figure}[t]
 \centering
-\includegraphics[width=0.85\columnwidth]{figuras/Gemini_Generated_Image_Figura10.jpg}
+\includegraphics[width=0.98\columnwidth]{figuras/figura8_confiabilidade_estrutural_PT.png}
 \caption{Projeções de confiabilidade física estrutural: (A) Vida útil projetada por eletromigração via Equação de Black com ampliação de $2{,}53\times$ ($+153\%$) sob regime nominal e $2{,}34\times$ conservador decorrente da redução das temperaturas de pico e corrente; (B) Tolerância à fadiga oligocíclica em juntas de solda BGA via Relação de Coffin-Manson com ampliação de $45{,}1\times$ ($+4410\%$) propiciada pela supressão de $\Delta T_{\text{esp}}$ de $9{,}99\text{ K}$ para apenas $1{,}63\text{ K}$.}
 \label{fig:confiabilidade_black_cm}
 \end{figure}
@@ -408,7 +412,7 @@ comprovando que a supressão contínua de diafonia e gradientes espaciais blinda
 Simulando o envelhecimento superficial do radiador sob erosão de oxigênio atômico ($\varepsilon$ reduzido de 0,88 para 0,70 e $\alpha_s$ acrescido de 0,12 para 0,20), o MPC-DVFS adaptou suavemente o teto de frequência em horizonte deslizante, preservando a integridade física reportada na Figura~\ref{fig:confiabilidade_black_cm} e garantindo ausência de violações térmicas.
 
 \section{Trabalhos Relacionados}
-O gerenciamento térmico dinâmico (DTM) para processadores terrestres foi amplamente investigado por Brooks e Martonosi~\cite{brooks2001dtm} e consolidado em simuladores arquiteturais como HotSpot por Skadron et al.~\cite{skadron2004hotspot}. Abordagens subsequentes exploraram técnicas de roteamento e posicionamento térmico 3D (Kahng et al.~\cite{kahng2013thermal}), gerenciamento térmico distribuído em MPSoCs heterogêneos (Ge et al.~\cite{ge2010distributed}) e controle preditivo baseado em modelo (Atienza et al.~\cite{atienza2008thermal}). No entanto, Le Sueur e Heiser~\cite{lesueur2010dvfs} evidenciaram a lei dos retornos decrescentes do DVFS isolado sob regimes dominados por potência estática, enquanto Hoffmann e Fr{\"o}hlich~\cite{hoffmann2021online} propôs controladores adaptativos com aprendizado de máquina para mitigar atrasos em pipelines em tempo real. No domínio aeroespacial, Stough~\cite{stough2021onboard} analisou o processamento autônomo embarcado, Chen e Huang~\cite{chen2022crosstalk} investigaram a mitigação de diafonia em sistemas 2.5D, Zhang et al.~\cite{zhang2023predictive} modelaram a gestão preditiva sob radiação pura, e Chen et al.~\cite{chen2026hotai} formalizaram o escalonamento sob diafonia térmica espacial (Hot AI in Cold Space). Todas as abordagens terrestres clássicas assumem convecção forçada com sumidouros infinitos lineares ($q \propto \Delta T$), premissa que colapsa no vácuo orbital onde prevalece a radiação quártica de Stefan-Boltzmann e elevadas constantes de inércia térmica.
+O gerenciamento térmico dinâmico (DTM) para processadores terrestres foi amplamente investigado por Brooks e Martonosi~\cite{brooks2001dtm} e consolidado em simuladores arquiteturais como HotSpot por Skadron et al.~\cite{skadron2004hotspot}. Abordagens subsequentes exploraram técnicas de posicionamento e planejamento térmico 3D (Lin et al.~\cite{lin2021thermal}), gerenciamento térmico distribuído em muitos núcleos (Ge et al.~\cite{ge2010distributed}) e otimização convexa de frequências térmicas em MPSoCs (Murali e Atienza et al.~\cite{murali2007convex}). No entanto, Le Sueur e Heiser~\cite{lesueur2010dvfs} evidenciaram a lei dos retornos decrescentes do DVFS isolado sob regimes dominados por potência estática, enquanto Hoffmann e Fr{\"o}hlich~\cite{hoffmann2021online} propuseram controladores adaptativos com aprendizado de máquina para mitigar atrasos em pipelines em tempo real. No domínio aeroespacial, Sherwood e Chien et al.~\cite{sherwood2003ase} demonstraram a autonomia e o processamento científico de bordo, Wang et al.~\cite{wang2025packaging} investigaram a modelagem térmica rápida em empacotamentos 2.5D, Yuan et al.~\cite{yuan2025heat} caracterizaram a dinâmica térmica de GPUs sob ciclos LEO, e Chen et al.~\cite{chen2026hotai} formalizaram o escalonamento sob diafonia térmica espacial (Hot AI in Cold Space). Todas as abordagens terrestres clássicas assumem convecção forçada com sumidouros infinitos lineares ($q \propto \Delta T$), premissa que colapsa no vácuo orbital onde prevalece a radiação quártica de Stefan-Boltzmann e elevadas constantes de inércia térmica.
 
 \section{Conclusões e Trabalhos Futuros}
 Este artigo apresentou o desenvolvimento e a validação do arcabouço unificado \textbf{TCAS-DVFS} para clusters heterogêneos orbitais de inteligência artificial em vácuo absoluto. Ao desacoplar dinâmicas condutivas rápidas inter-die da lenta inércia do radiador, o arcabouço articulou com sucesso um escalonador topológico SDP com um controlador preditivo multivariável (MPC-DVFS) restrito em tempo real sob limites dinâmicos do EPS.
@@ -421,104 +425,104 @@ Este trabalho foi financiado em parte pela Coordenação de Aperfeiçoamento de 
 \textit{Declaração de Uso de Inteligência Artificial Generativa (IA):} Em conformidade com as Diretrizes Autorais e Políticas de Ética da IEEE, os autores declaram que ferramentas de inteligência artificial generativa (Claude 3.7 Sonnet da Anthropic e Google Gemini) foram utilizadas estritamente como ferramentas tecnológicas assistivas para refinamento gramatical, harmonização de tradução e auxílio na renderização gráfica. Todas as formulações teóricas, deduções matemáticas termodinâmicas e em espaço de estados, projetos de algoritmos, simulações multifísicas, análises numéricas e conclusões científicas foram concebidas, verificadas e de autoria exclusiva dos autores humanos.
 
 \begin{thebibliography}{33}
-\bibitem{atienza2008thermal}
-D.~Atienza \emph{et~al.}, ``Thermal-Aware Design and Run-Time Management of High-Performance Multiprocessor Systems-on-Chip,'' \emph{IEEE Des. Test Comput.}, vol.~25, no.~5, pp. 438--448, 2008. \href{https://doi.org/10.1109/MDT.2008.149}{DOI: 10.1109/MDT.2008.149}.
+\bibitem{denby2020asplos}
+B.~Denby and B.~Lucia, ``Orbital Edge Computing: Nanosatellite Constellations as a New Class of Computer System,'' in \emph{Proc. 25th Int. Conf. Archit. Support Program. Lang. Oper. Syst. (ASPLOS)}, Lausanne, Switzerland, 2020, pp. 939--954. \href{https://doi.org/10.1145/3373376.3378473}{DOI: 10.1145/3373376.3378473}.
 
-\bibitem{incropera2011fundamentals}
-T.~L.~Bergman, A.~S.~Lavine, F.~P.~Incropera, and D.~P.~DeWitt, \emph{Fundamentals of Heat and Mass Transfer}, 7th~ed. Hoboken, NJ: John Wiley \& Sons, 2011. ISBN: 978-0470501979.
-
-\bibitem{bertran2022islped}
-R.~Bertran \emph{et~al.}, ``Energy-Efficient and Thermal-Safe Acceleration of Deep Neural Networks on Embedded Platforms,'' in \emph{Proc. IEEE/ACM Int. Symp. Low Power Electron. Design (ISLPED)}, 2022, pp. 1--6. \href{https://doi.org/10.1145/3531437.3539719}{DOI: 10.1145/3531437.3539719}.
-
-\bibitem{black1969electromigration}
-J.~R. Black, ``Electromigration---A brief survey and some recent results,'' \emph{IEEE Trans. Electron Devices}, vol.~16, no.~4, pp. 338--347, 1969. \href{https://doi.org/10.1109/T-ED.1969.16754}{DOI: 10.1109/T-ED.1969.16754}.
-
-\bibitem{boyd2004convex}
-S.~Boyd and L.~Vandenberghe, \emph{Convex Optimization}. Cambridge, U.K.: Cambridge Univ. Press, 2004. \href{https://doi.org/10.1017/CBO9780511804441}{DOI: 10.1017/CBO9780511804441}.
-
-\bibitem{brooks2001dtm}
-P.~E. Brooks and M.~Martonosi, ``Dynamic thermal management for high-performance microprocessors,'' in \emph{Proc. IEEE 7th Int. Symp. High-Performance Comput. Archit. (HPCA)}, 2001, pp. 171--182. \href{https://doi.org/10.1109/HPCA.2001.903261}{DOI: 10.1109/HPCA.2001.903261}.
+\bibitem{garrett2024taes}
+T.~Garrett, S.~Roffe, and A.~D.~George, ``Soft-Error Characterization and Mitigation Strategies for Edge Tensor Processing Units in Space,'' \emph{IEEE Trans. Aerosp. Electron. Syst.}, vol.~60, no.~4, pp. 5481--5498, Aug. 2024. \href{https://doi.org/10.1109/TAES.2024.3393929}{DOI: 10.1109/TAES.2024.3393929}.
 
 \bibitem{chen2026sagin}
 H.~Chen, ``Edge Intelligence for Space-Air-Ground Integrated Network: Challenges, Solutions, and Future Directions,'' \emph{Chinese J. Aeronaut.}, vol.~39, no.~8, p. 103969, 2026. \href{https://doi.org/10.1016/j.cja.2025.103969}{DOI: 10.1016/j.cja.2025.103969}.
 
-\bibitem{chen2026hotai}
-S.~Chen, Z.~Hua, N.~Tziritas, and G.~Theodoropoulos, ``Hot AI in Cold Space: Thermal-Crosstalk-Aware Scheduling for Sustainable Orbital AI Clusters,'' in \emph{Proc. 5th Workshop on Sustainable Computer Systems (HotCarbon)}, 2026, pp. 1--7. \href{https://doi.org/10.1145/3642970.3655831}{DOI: 10.1145/3642970.3655831}.
+\bibitem{manson1966fatigue}
+S.~S.~Manson, \emph{Thermal Stress and Low-Cycle Fatigue}. New York, NY, USA: McGraw-Hill, 1966. ISBN: 978-0070399303.
 
-\bibitem{chen2022crosstalk}
-X.~Chen and S.~Huang, ``Thermal Crosstalk Mitigation in Heterogeneous 2.5D Systems via Spatial Workload Steering,'' \emph{IEEE Trans. Comput.-Aided Des. Integr. Circuits Syst.}, vol.~41, no.~11, pp. 4810--4823, 2022. \href{https://doi.org/10.1109/TCAD.2022.3149728}{DOI: 10.1109/TCAD.2022.3149728}.
+\bibitem{ecss2008thermal}
+European Cooperation for Space Standardization, ``Space engineering: Thermal control general requirements,'' ECSS-E-ST-31C, Noordwijk, Netherlands, Nov. 2008. [Online]. Available: \url{https://ecss.nl/standard/ecss-e-st-31c-thermal-control/}.
 
-\bibitem{corbet2005ldd}
-J.~Corbet, A.~Rubini, and G.~Kroah-Hartman, \emph{Linux Device Drivers}, 3rd~ed. Sebastopol, CA, USA: O'Reilly Media, 2005. ISBN: 978-0596005900.
-
-\bibitem{denby2020asplos}
-B.~Denby and B.~Lucia, ``Orbital Edge Computing: Nanosatellite Constellations as a New Class of Computer System,'' in \emph{Proc. 25th ASPLOS}, 2020, pp. 1--16. \href{https://doi.org/10.1145/3373376.3378519}{DOI: 10.1145/3373376.3378519}.
-
-\bibitem{ecss2020thermal}
-European Cooperation for Space Standardization, ``Space Engineering: Thermal Control,'' ECSS-E-ST-31C, Noordwijk, Netherlands, 2020. [Online]. Available: \url{https://ecss.nl}.
-
-\bibitem{ferreau2014qpoases}
-H.~J. Ferreau, C.~Kirches, A.~Potschka, H.~G. Bock, and M.~Diehl, ``qpOASES: A parametric active-set algorithm for quadratic programming,'' \emph{Math. Program. Comput.}, vol.~6, no.~4, pp. 327--363, 2014. \href{https://doi.org/10.1007/s12532-014-0071-1}{DOI: 10.1007/s12532-014-0071-1}.
-
-\bibitem{ge2010distributed}
-Y.~Ge, P.~Malani, and Q.~Qiu, ``Distributed thermal management for heterogeneous MPSoCs,'' in \emph{Proc. Des., Autom. Test Eur. Conf. Exhib. (DATE)}, 2010, pp. 605--610. \href{https://doi.org/10.1109/DATE.2010.5456983}{DOI: 10.1109/DATE.2010.5456983}.
-
-\bibitem{gilmore2021handbook}
-M.~A. Gilmore and E.~D. Sadeh, \emph{Satellite Thermal Control Handbook}, 2nd~ed. El Segundo, CA: The Aerospace Press, 2021. ISBN: 978-1884989117.
-
-\bibitem{giuffrida2020phisat1}
-G.~Giuffrida \emph{et~al.}, ``The $\Phi$-Sat-1 Mission: The First On-Orbit Deep Learning Demonstration to Filter Cloud-Covered Images,'' \emph{IEEE Geosci. Remote Sens. Mag.}, vol.~8, no.~4, pp. 269--275, 2020. \href{https://doi.org/10.1109/MGRS.2020.3023568}{DOI: 10.1109/MGRS.2020.3023568}.
-
-\bibitem{gleixner2006hrtimers}
-T.~Gleixner and D.~Niehaus, ``Hrtimers and beyond: Transforming the Linux time subsystems,'' in \emph{Proc. Linux Symp.}, vol.~1, Ottawa, ON, Canada, 2006, pp. 333--346.
-
-\bibitem{groothuis2021radiator}
-H.~G. Groothuis and C.~F. Neirynck, ``Spacecraft Radiator Sizing and Transient Analysis for High-Power Payloads,'' \emph{J. Spacecr. Rockets}, vol.~58, no.~2, pp. 411--424, 2021. \href{https://doi.org/10.2514/1.A34892}{DOI: 10.2514/1.A34892}.
-
-\bibitem{kahng2013thermal}
-A.~B. Kahng \emph{et~al.}, ``High-performance temperature-aware routing and floorplanning for 3D multi-core architectures,'' \emph{IEEE Trans. Very Large Scale Integr. (VLSI) Syst.}, vol.~21, no.~10, pp. 1891--1904, 2013. \href{https://doi.org/10.1109/TVLSI.2012.2223485}{DOI: 10.1109/TVLSI.2012.2223485}.
+\bibitem{sherwood2003ase}
+R.~Sherwood, S.~Chien, D.~Tran, R.~Castano, B.~Cichy, and G.~Rabideau, ``The Autonomous Sciencecraft Experiment,'' in \emph{Proc. 2003 IEEE Aerosp. Conf.}, Big Sky, MT, USA, 2003, vol.~1, pp. 1-390--1-398. \href{https://doi.org/10.1109/AERO.2003.1235068}{DOI: 10.1109/AERO.2003.1235068}.
 
 \bibitem{king2013spatial}
-M.~D. King \emph{et~al.}, ``Spatial and Temporal Distribution of Clouds Observed by MODIS Onboard the Terra and Aqua Satellites,'' \emph{IEEE Trans. Geosci. Remote Sens.}, vol.~51, no.~7, pp. 3826--3852, 2013. \href{https://doi.org/10.1109/TGRS.2012.2227333}{DOI: 10.1109/TGRS.2012.2227333}.
+M.~D.~King \emph{et~al.}, ``Spatial and Temporal Distribution of Clouds Observed by MODIS Onboard the Terra and Aqua Satellites,'' \emph{IEEE Trans. Geosci. Remote Sens.}, vol.~51, no.~7, pp. 3826--3852, Jul. 2013. \href{https://doi.org/10.1109/TGRS.2012.2227333}{DOI: 10.1109/TGRS.2012.2227333}.
 
-\bibitem{lesueur2010dvfs}
-E.~Le~Sueur and G.~Heiser, ``Dynamic Voltage and Frequency Scaling: The Laws of Diminishing Returns,'' in \emph{Proc. 2010 Int. Conf. Power Aware Comput. Syst. (HotPower)}, Vancouver, Canada, 2010, pp. 1--5.
+\bibitem{giuffrida2021phisat1}
+G.~Giuffrida \emph{et~al.}, ``The $\Phi$-Sat-1 Mission: The First On-Board Deep Neural Network Demonstrator for Satellite Earth Observation,'' \emph{IEEE Trans. Geosci. Remote Sens.}, vol.~60, pp. 1--14, 2021. \href{https://doi.org/10.1109/TGRS.2021.3125567}{DOI: 10.1109/TGRS.2021.3125567}.
 
-\bibitem{macenski2022ros2}
-S.~Macenski, T.~Foote, B.~Gerkey, C.~Lalancette, and W.~Woodall, ``Robot Operating System 2: Design, architecture, and uses in the wild,'' \emph{Sci. Robot.}, vol.~7, no.~66, p. eabm6074, 2022. \href{https://doi.org/10.1126/scirobotics.abm6074}{DOI: 10.1126/scirobotics.abm6074}.
-
-\bibitem{manson1966fatigue}
-S.~S. Manson, \emph{Thermal Stress and Low-Cycle Fatigue}. New York: McGraw-Hill, 1966. ISBN: 978-0070399303.
+\bibitem{incropera2011fundamentals}
+T.~L.~Bergman, A.~S.~Lavine, F.~P.~Incropera, and D.~P.~DeWitt, \emph{Fundamentals of Heat and Mass Transfer}, 7th~ed. Hoboken, NJ, USA: John Wiley \& Sons, 2011. ISBN: 978-0470501979.
 
 \bibitem{nasa2022handbook}
-NASA Technical Handbook, ``Thermal Design and Analysis of Small Spacecraft,'' NASA-HDBK-7009A, Washington, DC, 2022. [Online]. Available: \url{https://standards.nasa.gov}.
+NASA, ``Handbook for Models and Simulations: An Implementation Guide for NASA-STD-7009,'' NASA-HDBK-7009B, National Aeronautics and Space Administration, Washington, DC, USA, 2022. [Online]. Available: \url{https://standards.nasa.gov/standard/NASA/NASA-HDBK-7009}.
 
-\bibitem{pallipadi2006ondemand}
-V.~Pallipadi and A.~Starikovskiy, ``The ondemand governor: Past, present and future,'' in \emph{Proc. Linux Symp.}, vol.~2, Ottawa, ON, Canada, 2006, pp. 223--238.
+\bibitem{gilmore2002handbook}
+D.~G.~Gilmore, \emph{Spacecraft Thermal Control Handbook, Volume I: Fundamental Technologies}, 2nd~ed. El Segundo, CA, USA: The Aerospace Press / AIAA, 2002. ISBN: 978-1884989117.
+
+\bibitem{pederson2024radiator}
+K.~Pederson, S.~Keller, D.~Kindem, H.~Hommes, and O.~Ilic, ``Multifunctional Lightweight Radiators for Small-Satellite Thermal Control,'' \emph{J. Spacecr. Rockets}, 2024. \href{https://doi.org/10.2514/1.A36693}{DOI: 10.2514/1.A36693}.
+
+\bibitem{ortiz2024spirit}
+M.~Ortiz~del~Castillo \emph{et~al.}, ``Mitigating Challenges of the Space Environment for Onboard Artificial Intelligence: Design Overview of the Imaging Payload on SpIRIT,'' in \emph{Proc. IEEE/CVF Conf. Comput. Vis. Pattern Recognit. Workshops (CVPRW)}, Seattle, WA, USA, 2024, pp. 6736--6745. \href{https://doi.org/10.1109/CVPRW63382.2024.00672}{DOI: 10.1109/CVPRW63382.2024.00672}.
+
+\bibitem{chen2026hotai}
+S.~Chen, Z.~Hua, N.~Tziritas, and G.~Theodoropoulos, ``Hot AI in Cold Space: Thermal-Crosstalk-Aware Scheduling for Sustainable Orbital AI Clusters,'' \emph{arXiv preprint arXiv:2606.26150}, pp. 1--7, Jun. 2026. \href{https://doi.org/10.48550/arXiv.2606.26150}{DOI: 10.48550/arXiv.2606.26150}.
+
+\bibitem{wang2025packaging}
+D.-W.~Wang, B.-W.~Zhang, L.-T.~Wang, P.~Zhang, and W.-S.~Zhao, ``A Proposal of Fast Thermal Simulation Method for 2.5-D Advanced Packaging to Enable Efficient Thermal-Aware Placement Optimization,'' \emph{IEEE Trans. Comput.-Aided Des. Integr. Circuits Syst.}, early access, 2025. \href{https://doi.org/10.1109/TCAD.2025.3585802}{DOI: 10.1109/TCAD.2025.3585802}.
+
+\bibitem{brooks2001dtm}
+D.~Brooks and M.~Martonosi, ``Dynamic thermal management for high-performance microprocessors,'' in \emph{Proc. 7th IEEE Int. Symp. High-Performance Comput. Archit. (HPCA)}, Monterrey, Mexico, 2001, pp. 171--182. \href{https://doi.org/10.1109/HPCA.2001.903261}{DOI: 10.1109/HPCA.2001.903261}.
+
+\bibitem{skadron2004hotspot}
+K.~Skadron \emph{et~al.}, ``Temperature-aware microarchitecture: Modeling and implementation,'' \emph{ACM Trans. Archit. Code Optim.}, vol.~1, no.~1, pp. 94--125, Mar. 2004. \href{https://doi.org/10.1145/980152.980157}{DOI: 10.1145/980152.980157}.
 
 \bibitem{hoffmann2021online}
-J.~L.~C. Hoffmann and A.~A. Fr{\"o}hlich, ``Online Machine Learning for Energy-Aware Multicore Real-Time Embedded Systems,'' \emph{IEEE Trans. Comput.}, vol.~71, no.~2, pp. 493--505, Feb. 2022. \href{https://doi.org/10.1109/TC.2021.3056070}{DOI: 10.1109/TC.2021.3056070}.
+J.~L.~C.~Hoffmann and A.~A.~Fr{\"o}hlich, ``Online Machine Learning for Energy-Aware Multicore Real-Time Embedded Systems,'' \emph{IEEE Trans. Comput.}, vol.~71, no.~2, pp. 493--505, Feb. 2022. \href{https://doi.org/10.1109/TC.2021.3056070}{DOI: 10.1109/TC.2021.3056070}.
 
-\bibitem{sha1990priority}
-L.~Sha, R.~Rajkumar, and J.~P. Lehoczky, ``Priority Inheritance Protocols: An Approach to Real-Time Synchronization,'' \emph{IEEE Trans. Comput.}, vol.~39, no.~9, pp. 1175--1185, 1990. \href{https://doi.org/10.1109/12.57058}{DOI: 10.1109/12.57058}.
+\bibitem{boyd2004convex}
+S.~Boyd and L.~Vandenberghe, \emph{Convex Optimization}. Cambridge, U.K.: Cambridge Univ. Press, 2004. \href{https://doi.org/10.1017/CBO9780511804441}{DOI: 10.1017/CBO9780511804441}.
+
+\bibitem{lesueur2010dvfs}
+E.~Le~Sueur and G.~Heiser, ``Dynamic Voltage and Frequency Scaling: The Laws of Diminishing Returns,'' in \emph{Proc. 2010 Int. Conf. Power Aware Comput. Syst. (HotPower)}, Vancouver, BC, Canada, 2010, pp. 1--5. [Online]. Available: \url{https://www.usenix.org/conference/hotpower-10}.
+
+\bibitem{murali2007convex}
+S.~Murali, A.~Mutapcic, D.~Atienza, R.~Gupta, S.~Boyd, and G.~De~Micheli, ``Temperature-aware processor frequency assignment for MPSoCs using convex optimization,'' in \emph{Proc. 5th IEEE/ACM/IFIP Int. Conf. Hardw./Softw. Codesign Syst. Synth. (CODES+ISSS)}, Salzburg, Austria, 2007, pp. 209--214. \href{https://doi.org/10.1145/1289816.1289845}{DOI: 10.1145/1289816.1289845}.
+
+\bibitem{yuan2025heat}
+Z.~Yuan, J.~Liu, G.~Song, and T.~Zhu, ``Heat: Satellite\'s meat is GPU\'s poison,'' \emph{arXiv preprint arXiv:2501.14757}, pp. 1--12, 2025. \href{https://doi.org/10.48550/arXiv.2501.14757}{DOI: 10.48550/arXiv.2501.14757}.
+
+\bibitem{ferreau2014qpoases}
+H.~J.~Ferreau, C.~Kirches, A.~Potschka, H.~G.~Bock, and M.~Diehl, ``qpOASES: A parametric active-set algorithm for quadratic programming,'' \emph{Math. Program. Comput.}, vol.~6, no.~4, pp. 327--363, 2014. \href{https://doi.org/10.1007/s12532-014-0071-1}{DOI: 10.1007/s12532-014-0071-1}.
+
+\bibitem{zhang2011tvlsi}
+Y.~Zhang and A.~Srivastava, ``Accurate Temperature Estimation Using Noisy Thermal Sensors for Gaussian and Non-Gaussian Cases,'' \emph{IEEE Trans. Very Large Scale Integr. (VLSI) Syst.}, vol.~19, no.~9, pp. 1617--1626, Sep. 2011. \href{https://doi.org/10.1109/TVLSI.2010.2051567}{DOI: 10.1109/TVLSI.2010.2051567}.
 
 \bibitem{simon2006optimal}
 D.~Simon, \emph{Optimal State Estimation: Kalman, H-infinity, and Nonlinear Approaches}. Hoboken, NJ, USA: John Wiley \& Sons, 2006. \href{https://doi.org/10.1002/0470045345}{DOI: 10.1002/0470045345}.
 
-\bibitem{skadron2004hotspot}
-K.~Skadron \emph{et~al.}, ``Temperature-aware microarchitecture: Modeling and implementation,'' \emph{ACM Trans. Archit. Code Optim.}, vol.~1, no.~1, pp. 94--125, 2004. \href{https://doi.org/10.1145/980152.980157}{DOI: 10.1145/980152.980157}.
+\bibitem{corbet2005ldd}
+J.~Corbet, A.~Rubini, and G.~Kroah-Hartman, \emph{Linux Device Drivers}, 3rd~ed. Sebastopol, CA, USA: O'Reilly Media, 2005. ISBN: 978-0596005900.
 
-\bibitem{smith2023edgeai}
-J.~Smith, A.~Patel, and R.~Garcia, ``Edge AI for Earth Observation: Opportunities, Architecture, and Challenges,'' \emph{IEEE Trans. Aerosp. Electron. Syst.}, vol.~59, no.~4, pp. 3412--3428, 2023. \href{https://doi.org/10.1109/TAES.2023.3278912}{DOI: 10.1109/TAES.2023.3278912}.
+\bibitem{pallipadi2006ondemand}
+V.~Pallipadi and A.~Starikovskiy, ``The ondemand governor: Past, present and future,'' in \emph{Proc. Linux Symp.}, vol.~2, Ottawa, ON, Canada, 2006, pp. 223--238.
 
-\bibitem{stough2021onboard}
-T.~E. Stough, ``Onboard autonomous processing for future space missions,'' \emph{Acta Astronautica}, vol.~182, pp. 293--304, 2021. \href{https://doi.org/10.1016/j.actaastro.2021.02.012}{DOI: 10.1016/j.actaastro.2021.02.012}.
+\bibitem{gleixner2006hrtimers}
+T.~Gleixner and D.~Niehaus, ``Hrtimers and beyond: Transforming the Linux time subsystems,'' in \emph{Proc. Linux Symp.}, vol.~1, Ottawa, ON, Canada, 2006, pp. 333--346.
 
-\bibitem{zhang2023predictive}
-L.~Zhang, Y.~Wang, and T.~Chen, ``Predictive Thermal Management for Multi-Core Space Processors under Radiative Heat Transfer,'' \emph{IEEE Trans. Comput.}, vol.~72, no.~8, pp. 2190--2203, 2023. \href{https://doi.org/10.1109/TC.2023.3245678}{DOI: 10.1109/TC.2023.3245678}.
+\bibitem{macenski2022ros2}
+S.~Macenski, T.~Foote, B.~Gerkey, C.~Lalancette, and W.~Woodall, ``Robot Operating System 2: Design, architecture, and uses in the wild,'' \emph{Sci. Robot.}, vol.~7, no.~66, p. eabm6074, 2022. \href{https://doi.org/10.1126/scirobotics.abm6074}{DOI: 10.1126/scirobotics.abm6074}.
 
-\bibitem{zhang2012kalman}
-Y.~Zhang and A.~Srivastava, ``Accurate Temperature Estimation Using Noisy Thermal Sensors for Gaussian and Non-Gaussian Cases,'' \emph{IEEE Trans. Very Large Scale Integr. (VLSI) Syst.}, vol.~20, no.~9, pp. 1656--1667, 2012. \href{https://doi.org/10.1109/TVLSI.2011.2160991}{DOI: 10.1109/TVLSI.2011.2160991}.
+\bibitem{sha1990priority}
+L.~Sha, R.~Rajkumar, and J.~P.~Lehoczky, ``Priority Inheritance Protocols: An Approach to Real-Time Synchronization,'' \emph{IEEE Trans. Comput.}, vol.~39, no.~9, pp. 1175--1185, Sep. 1990. \href{https://doi.org/10.1109/12.57058}{DOI: 10.1109/12.57058}.
+
+\bibitem{black1969electromigration}
+J.~R.~Black, ``Electromigration---A brief survey and some recent results,'' \emph{IEEE Trans. Electron Devices}, vol.~16, no.~4, pp. 338--347, Apr. 1969. \href{https://doi.org/10.1109/T-ED.1969.16754}{DOI: 10.1109/T-ED.1969.16754}.
+
+\bibitem{lin2021thermal}
+J.-M.~Lin, B.-J.~Su, and Y.-T.~Peng, ``Thermal-Aware Floorplanning and TSV-Planning for Mixed-Type Modules in a Fixed-Outline 3-D IC,'' \emph{IEEE Trans. Very Large Scale Integr. (VLSI) Syst.}, vol.~29, no.~11, pp. 1957--1970, Nov. 2021. \href{https://doi.org/10.1109/TVLSI.2021.3100343}{DOI: 10.1109/TVLSI.2021.3100343}.
+
+\bibitem{ge2010distributed}
+Y.~Ge, P.~Malani, and Q.~Qiu, ``Distributed task migration for thermal management in many-core systems,'' in \emph{Proc. 47th ACM/IEEE Des. Autom. Conf. (DAC)}, Anaheim, CA, USA, 2010, pp. 579--584. \href{https://doi.org/10.1145/1837274.1837417}{DOI: 10.1145/1837274.1837417}.
 \end{thebibliography}
 
 \begin{IEEEbiography}[{\includegraphics[width=1in,height=1.25in,clip,keepaspectratio]{figuras/author1.png}}]{Dafnh\^e Thor Castro de Martins Barros}
