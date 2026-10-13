@@ -60,7 +60,7 @@ ylabel('Temp. Radiador [°C]', 'FontSize', 10, 'FontWeight', 'bold');
 title('(b) Temperatura Transiente do Radiador com Dinamica de Stefan-Boltzmann (\tau_{rad} \approx 480 s)', 'FontSize', 11, 'FontWeight', 'bold');
 
 export_fig_pdf_png(h1, fullfile(fig_dir, 'figura1_ambiente_orbital'));
-close(h1);
+%close(h1);
 
 % =========================================================================
 % FIGURA 5: TRAJETÓRIAS TÉRMICAS TRANSITÓRIAS AO LONGO DAS 3 ÓRBITAS
@@ -104,7 +104,7 @@ title('(c) Framework Proposto TCAS-DVFS: Estabilizacao Convexa Preditiva (Pico E
 legend({'TCAS-DVFS (0% Violacoes, 0 s Runaway)'}, 'Location', 'southwest', 'FontSize', 9);
 
 export_fig_pdf_png(h5, fullfile(fig_dir, 'figura5_trajetorias_termicas'));
-close(h5);
+%close(h5);
 
 % =========================================================================
 % FIGURA 6: SUPRESSÃO DE GRADIENTE TÉRMICO ESPACIAL (DELTA T ESPACIAL)
@@ -117,7 +117,7 @@ dT_thr = d_e3.res.Throttling.delta_T_esp;
 dT_pid = d_e3.res.Space_PID.delta_T_esp;
 dT_tcs = d_e4.delta_T_tcas;
 
-plot(t_min, dT_ond, 'Color', [0.85, 0.2, 0.2, 0.5], 'LineWidth', 1.0); hold on;
+plot(t_min, dT_ond, 'Color', [0.85, 0.2, 0.2], 'LineWidth', 1.0); hold on;
 plot(t_min, dT_thr, 'Color', [0.3, 0.3, 0.3], 'LineWidth', 1.1);
 plot(t_min, dT_pid, 'Color', c_pid, 'LineWidth', 1.1);
 plot(t_min, dT_tcs, 'Color', c_tcs, 'LineWidth', 1.5);
@@ -132,7 +132,7 @@ legend({'Ondemand (\DeltaT_{med} = 12,87 K)', 'Thermal Throttling (\DeltaT_{med}
         'Location', 'northeast', 'FontSize', 9);
 
 export_fig_pdf_png(h6, fullfile(fig_dir, 'figura6_gradiente_espacial'));
-close(h6);
+%close(h6);
 
 % =========================================================================
 % FIGURA 7: VAZÃO TEMPORAL, EDP E POTÊNCIAS DE CONSUMO
@@ -141,8 +141,8 @@ fprintf('Gerando Figura 7 (Throughput, EDP e Frequencia)...\n');
 h7 = figure('Name', 'Figura 7: Frequencia e Throughput', 'Position', [100, 100, 900, 560], 'Visible', 'off');
 
 subplot(2,1,1);
-f_med_thr = mean(d_e3.res.Throttling.f_hist, 2);
-f_med_pid = mean(d_e3.res.Space_PID.f_hist, 2);
+f_med_thr = mean(d_e3.res.Throttling.f_exec, 2);
+f_med_pid = mean(d_e3.res.Space_PID.f_exec, 2);
 f_med_tcs = mean(d_e4.f_tcas, 2);
 
 plot(t_min, f_med_thr, 'Color', [0.4, 0.4, 0.4], 'LineWidth', 1.0); hold on;
@@ -155,8 +155,8 @@ legend({'Throttling (Cortes para 0,40 GHz)', 'Space-PID (Oscilacoes)', 'TCAS-DVF
        'Location', 'northwest', 'FontSize', 9);
 
 subplot(2,1,2);
-plot(t_min, d_e3.res.Throttling.FPS_hist, 'Color', [0.4, 0.4, 0.4], 'LineWidth', 1.0); hold on;
-plot(t_min, d_e3.res.Space_PID.FPS_hist, 'Color', c_pid, 'LineWidth', 1.1);
+plot(t_min, d_e3.res.Throttling.FPS_instant, 'Color', [0.4, 0.4, 0.4], 'LineWidth', 1.0); hold on;
+plot(t_min, d_e3.res.Space_PID.FPS_instant, 'Color', c_pid, 'LineWidth', 1.1);
 plot(t_min, d_e4.FPS_tcas, 'Color', c_tcs, 'LineWidth', 1.3);
 grid on; xlim([0, max(t_min)]); ylim([40, 220]);
 xlabel('Tempo Orbital [min]', 'FontSize', 10, 'FontWeight', 'bold');
@@ -168,7 +168,7 @@ legend({sprintf('Throttling (Media: %.1f FPS)', d_e3.metricas.Throttling.FPS_med
         'Location', 'northwest', 'FontSize', 9);
 
 export_fig_pdf_png(h7, fullfile(fig_dir, 'figura7_throughput_frequencia'));
-close(h7);
+%close(h7);
 
 % =========================================================================
 % FIGURA 8: SENSIBILIDADE TÉRMICA E ROBUSTEZ A DEGRADAÇÃO DO RADIADOR
@@ -200,7 +200,7 @@ ylabel('Vazao Sustentada [FPS]', 'FontSize', 10, 'FontWeight', 'bold');
 title('(b) Adaptacao Graciosa de Vazao do MPC', 'FontSize', 10, 'FontWeight', 'bold');
 
 export_fig_pdf_png(h8, fullfile(fig_dir, 'figura8_sensibilidade_radiador'));
-close(h8);
+%close(h8);
 
 fprintf('Todas as figuras cientificas foram geradas com sucesso na pasta figuras/!\n');
 
@@ -212,9 +212,5 @@ end
 function export_fig_pdf_png(fig_handle, file_base)
     set(fig_handle, 'PaperPositionMode', 'auto');
     print(fig_handle, [file_base, '.png'], '-dpng', '-r300');
-    try
-        print(fig_handle, [file_base, '.pdf'], '-dpdf');
-    catch
-        % Fallback caso driver pdf tenha limitação
-    end
+    fprintf('  -> Salvo com sucesso: %s.png\n', file_base);
 end
