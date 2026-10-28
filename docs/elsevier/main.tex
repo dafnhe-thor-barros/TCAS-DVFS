@@ -36,16 +36,16 @@
 % Author 1: Dafnhe Barros
 \author[1]{Dafnh\^e~T.~C.~M.~Barros}[orcid=0009-0004-9840-0257]
 \cormark[1]
-\ead{dafnhe.barros@aluno.ifes.edu.br}
+\ead{dafnhe.barros@msn.com}
 \credit{Conceptualization, Methodology, Software, Validation, Formal analysis, Investigation, Data curation, Writing - original draft}
 
 % Author 2: Flavio Braz da Silva
 \author[1]{Fl\'avio~B.~Braz~da~Silva}[orcid=0000-0002-4752-9742]
 \ead{flavio.silva@ifes.edu.br}
-\credit{Supervision, Project administration, Resources, Funding acquisition, Writing - review \& editing}
+\credit{Supervision, Project administration, Resources, Writing - review \& editing}
 
 % Affiliation
-\affiliation[1]{organization={Graduate Program in Control and Automation Engineering (PROPECAUT), Federal Institute of Esp\'irito Santo (IFES)},
+\affiliation[1]{organization={Graduate Program in Control and Automation Engineering (ProPECAut), Federal Institute of Esp\'irito Santo (IFES)},
             addressline={Rodovia BR-101 Norte, Km 58}, 
             city={Serra}, 
             postcode={29166-064}, 
@@ -65,7 +65,7 @@
 
 % Abstract
 \begin{abstract}
-High-density heterogeneous artificial intelligence (AI) computing clusters onboard small satellites in Low Earth Orbit (LEO) face severe electrothermal constraints. Gas-mediated convective heat transfer is neglected in the adopted high-vacuum model ($h \approx 0$), confining thermal rejection exclusively to internal solid conduction and non-linear Stefan-Boltzmann radiation to deep space ($q \propto T^4$). In multi-chip modules (MCM), heavy neural inference workloads induce severe lateral conductive coupling between adjacent silicon dies (\textit{thermal crosstalk}). This paper develops \textbf{TCAS-DVFS} (\textit{Thermal-Crosstalk-Aware Scheduling and Model Predictive Dynamic Voltage and Frequency Scaling}), a model-based numerical control framework formulated from lumped thermodynamic principles. The proposed architecture integrates: (i) real-time state estimation via an Extended Kalman Filter (EKF) operating over a non-linear $5\times5$ Compact Thermal Model (CTM); (ii) a discrete linear time-varying Model Predictive Controller (LTV MPC-DVFS) that solves a condensed quadratic program via a warm-started ADMM-style splitting iteration, coordinating operating frequencies; (iii) a dynamic temperature-referenced radiative power-budget surrogate derived from orbital ephemerides and ambient flux forecasts; and (iv) a topological task allocator relaxed over the semidefinite cone $\mathbb{S}_+^{17}$ via Semidefinite Programming (SDP). In a three-orbit numerical co-simulation of a 500-km circular LEO scenario (17,004.0~s, 34,009 time samples, 4 processing dies), TCAS-DVFS produced zero observed junction temperature violations above the 85~$^\circ$C threshold ($0\text{ s}$ versus 200.5~s for binary Thermal Throttling at 85/75~$^\circ$C and 14.0~s for Space-PID), attenuated peak inter-die thermal gradients by 77.6\% (reducing from 9.42 to 2.11~K), and maintained an aggregate throughput of 124.38~FPS with an energy-delay product proxy ($E_{t_{\mathrm{frame}}}$) of 7.477~kJ$\cdot$s/frame. Functional ablation indicates a dominant contribution from the predictive control formulation in damping gradients and bounding temperatures, whereas topological SDP scheduling provides limited observed benefits in compact arrangements ($N=4$ dies) due to conductive symmetry. Sensitivity was evaluated under a 30-sample Latin Hypercube Sampling (LHS) stress-test envelope ($\pm20\%$ parameter variation), yielding zero observed violations with an exact 95\% Clopper-Pearson upper confidence bound of 11.57\%, where die-to-radiator thermal resistance ($R_r$) exhibited the strongest monotonic association with $T_{\max}$ (Spearman $\rho = +0.994$). Indicative reliability proxy analyses demonstrate that electromigration yields no life extension (relative Black damage ratios of 0.96 and 0.81), whereas cyclic thermal stress severity is noticeably damped. The reported evidence is limited to numerical simulation of the stated lumped-parameter model and does not constitute hardware or flight qualification.
+High-density heterogeneous artificial intelligence (AI) computing clusters onboard small satellites in Low Earth Orbit (LEO) face severe electrothermal constraints. Gas-mediated convective heat transfer is neglected in the adopted high-vacuum model ($h \approx 0$), confining thermal rejection exclusively to internal solid conduction and non-linear Stefan-Boltzmann radiation to deep space ($q \propto T^4$). In multi-chip modules (MCM), heavy neural inference workloads induce severe lateral conductive coupling between adjacent silicon dies (\textit{thermal crosstalk}). This paper investigates a model-based predictive thermal management strategy, denoted \textbf{TCAS-DVFS} (\textit{Thermal-Crosstalk-Aware Scheduling and Model Predictive Dynamic Voltage and Frequency Scaling}), formulated from lumped thermodynamic principles for multi-die spaceborne accelerators. The proposed architecture integrates: (i) real-time state estimation via an Extended Kalman Filter (EKF) operating over a non-linear $5\times5$ Compact Thermal Model (CTM); (ii) a discrete linear time-varying Model Predictive Controller (LTV MPC-DVFS) that solves a condensed quadratic program via a warm-started ADMM-style splitting iteration, coordinating operating frequencies; (iii) a dynamic temperature-referenced radiative power-budget surrogate derived from orbital ephemerides and ambient flux forecasts; and (iv) a topological task allocator relaxed over the semidefinite cone $\mathbb{S}_+^{17}$ via Semidefinite Programming (SDP). In a three-orbit numerical co-simulation of a 500-km circular LEO scenario (17,004.0~s, 34,009 time samples, 4 processing dies), TCAS-DVFS produced zero observed junction temperature violations above the 85~$^\circ$C threshold ($0\text{ s}$ versus 200.5~s for binary Thermal Throttling at 85/75~$^\circ$C and 14.0~s for Space-PID), attenuated peak inter-die thermal gradients by 77.6\% (reducing from 9.42 to 2.11~K), and maintained an aggregate throughput of 124.38~FPS with an energy-delay product proxy ($E_{t_{\mathrm{frame}}}$) of 7.477~kJ$\cdot$s/frame. Functional ablation indicates a dominant contribution from the predictive control formulation in damping gradients and bounding temperatures, whereas topological SDP scheduling provides limited observed benefits in compact arrangements ($N=4$ dies) due to conductive symmetry. Sensitivity was evaluated under a 30-sample Latin Hypercube Sampling (LHS) stress-test envelope ($\pm20\%$ parameter variation), yielding zero observed violations with an exact 95\% Clopper-Pearson upper confidence bound of 11.57\%, where die-to-radiator thermal resistance ($R_r$) exhibited the strongest monotonic association with $T_{\max}$ (Spearman $\rho = +0.994$). Indicative reliability proxy analyses demonstrate that electromigration yields no life extension (relative Black damage ratios of 0.96 and 0.81), whereas cyclic thermal stress severity is noticeably damped. The reported evidence is limited to numerical simulation of the stated lumped-parameter model and does not constitute hardware or flight qualification.
 \end{abstract}
 
 \begin{keywords}
@@ -104,7 +104,7 @@ The pioneering work of \citet{chen2026hotai} established thermal-crosstalk-aware
 \begin{quote}
 \textit{Can a model-based coordinated MPC-DVFS policy reduce thermal-threshold exceedance and inter-die temperature gradients in a simulated four-die orbital AI cluster while maintaining competitive inference throughput relative to reactive thermal governors under identical modeled workload and environmental conditions?}
 \end{quote}
-To address this question through model-based numerical simulation, this paper delivers the following original contributions:
+To address this question through model-based numerical simulation, this paper presents the following contributions and findings within the scope of the modeled multi-physics system:
 \begin{enumerate}
 \item \textbf{Non-linear State-Space Electrothermal Modeling:} we formulate a $5\times5$ compact thermal network (CTM) capturing conductive coupling matrices, linearized Stefan-Boltzmann radiator dynamics, and non-linear subthreshold leakage positive feedback, integrated with an Extended Kalman Filter (EKF) observer under stochastic sensor noise.
 \item \textbf{Constrained Predictive Control (LTV MPC-DVFS):} we formulate a discrete linear time-varying Model Predictive Controller that solves a condensed quadratic programming problem via a warm-started ADMM-style splitting iteration, coordinating operating frequencies to track inference workloads, enforce a nominal 83~$^\circ$C limit, and suppress spatial gradients.
@@ -223,15 +223,15 @@ The extended state vector $\mathbf{x} = [T_1, T_2, T_3, T_4, T_{rad}]^T \in \mat
 \mathbf{K} &= \mathbf{P}^-(\mathbf{P}^- + \mathbf{R})^{-1}, \quad \hat{\mathbf{x}} = \hat{\mathbf{x}}^- + \mathbf{K}(\mathbf{y} - \hat{\mathbf{x}}^-), \\
 \mathbf{P} &= (\mathbf{I}_5-\mathbf{K})\mathbf{P}^-(\mathbf{I}_5-\mathbf{K})^T + \mathbf{K}\mathbf{R}\mathbf{K}^T,
 \end{align}
-where process noise covariance is set to $\mathbf{Q} = \mathrm{diag}(0.02, 0.02, 0.02, 0.02, 0.05)$, measurement noise covariance is $\mathbf{R} = \sigma_s^2 \mathbf{I}_5$, initial covariance is $\mathbf{P}_0 = \mathrm{diag}(1, 1, 1, 1, 2)$, and continuous Jacobian $\mathbf{F} = \partial \mathbf{f}/\partial \mathbf{x}$ linearizes the Stefan-Boltzmann radiator flux ($g_{rad,lin} = 4\varepsilon\sigma A_{rad} \hat{T}_{rad}^3$). In closed-loop co-simulation, the observer achieves an average junction temperature tracking RMSE below $0.12\text{ K}$.
+where process noise covariance is $\mathbf{Q} = \mathrm{diag}(0.02\,\mathbf{I}_4,\, 0.05)$, measurement noise covariance is $\mathbf{R} = \sigma_s^2 \mathbf{I}_5$, initial error covariance is $\mathbf{P}_0 = \mathrm{diag}(\mathbf{I}_4,\, 2)$, and Jacobian $\mathbf{F} = \partial \mathbf{f}/\partial \mathbf{x}$ linearizes the Stefan-Boltzmann radiator flux ($g_{rad,lin} = 4\varepsilon\sigma A_{rad} \hat{T}_{rad}^3$). In closed-loop co-simulation, the observer achieves an average junction temperature tracking RMSE below $0.12\text{ K}$.
 
 \subsection{Predictive Radiative Power Budget Surrogate}
-Using onboard orbital ephemerides over a prediction horizon of $N_p = 480$ steps (240~s), we compute a temperature-referenced radiative power-budget surrogate $P_{bud}(k)$ used as an MPC constraint surrogate to prevent the radiator from driving past steady-state equilibrium:
-\begin{multline}
-P_{bud}(k) = \max\Big\{15,\ \varepsilon\sigma A_{rad}\big[(T_{seg}+273.15)^4 - T_{space}^4\big] \\
-{}- \bar{Q}_{ext}(k)\Big\},
-\end{multline}
-where $T_{seg} = 83^\circ\text{C}$ and $\bar{Q}_{ext}(k) = \frac{1}{N_p}\sum_{j=k}^{k+N_p-1}Q_{ext}(j)$ is the predicted moving-average environmental flux.
+Using onboard orbital ephemerides over the prediction horizon ($H_p = 30$ steps, 60.0~s), we compute a temperature-referenced radiative power-budget surrogate $P_{bud}(k)$ used as an MPC constraint surrogate to prevent the radiator from driving past steady-state equilibrium:
+\begin{align}
+P_{bud}(k) &= \max\Big\{15,\ \varepsilon\sigma A_{rad}\big[(T_{seg}+273.15)^4 \nonumber \\
+&\quad - T_{space}^4\big] - \bar{Q}_{ext}(k)\Big\},
+\end{align}
+where $T_{seg} = 83^\circ\text{C}$ and $\bar{Q}_{ext}(k) = \frac{1}{H_p}\sum_{j=k}^{k+H_p-1}Q_{ext}(j)$ is the predicted moving-average environmental flux.
 
 \subsection{Topological Task Scheduler (TCAS)}
 At task allocation epochs ($\Delta t_{sched} = 120\text{ s}$), $M=4$ incoming neural inference workloads are assigned to the $N=4$ dies to minimize conductive crosstalk weighted by the steady-state impedance matrix $\mathbf{\Phi} = (\mathbf{G}_{crosstalk} + \mathbf{G}_{rad})^{-1}$:
@@ -548,7 +548,7 @@ This paper presented TCAS-DVFS, a predictive control framework designed to mitig
 \end{enumerate}
 
 \section*{CRediT Authorship Contribution Statement}
-\textbf{Dafnh\^e T. C. M. Barros:} Conceptualization, Methodology, Software, Validation, Formal analysis, Investigation, Data curation, Writing - original draft. \textbf{Fl\'avio B. Braz da Silva:} Supervision, Project administration, Resources, Funding acquisition, Writing - review \& editing.
+\textbf{Dafnh\^e T. C. M. Barros:} Conceptualization, Methodology, Software, Validation, Formal analysis, Investigation, Data curation, Writing - original draft. \textbf{Fl\'avio B. Braz da Silva:} Supervision, Project administration, Resources, Writing - review \& editing.
 
 \section*{Declaration of Competing Interest}
 The authors declare that they have no known competing financial interests or personal relationships that could have appeared to influence the work reported in this paper.
@@ -557,7 +557,7 @@ The authors declare that they have no known competing financial interests or per
 During the preparation of this work, the authors utilized large language models (Anthropic Claude 3.5 Sonnet and Google Gemini) for computational code refactoring, simulation script optimization, English language stylistic editing, and conceptual visual rendering of orbital geometry and thermal crosstalk (Figs.~\ref{fig:geometria_orbital} and~\ref{fig:diafonia_3d}). All mathematical derivations, model formulations, control designs, co-simulation executions, data analyses, and scientific conclusions remain the exclusive responsibility of the human authors.
 
 \section*{Acknowledgments}
-This study was financed in part by the Coordena\c{c}\~ao de Aperfei\c{c}oamento de Pessoal de N\'ivel Superior -- Brasil (CAPES) -- Finance Code 001, and by the Federal Institute of Esp\'irito Santo (IFES).
+The authors thank the Graduate Program in Control and Automation Engineering (ProPECAut) and the Federal Institute of Esp\'irito Santo (IFES) for institutional and computational support. This research received no specific grant from any funding agency in the public, commercial, or not-for-profit sectors.
 
 %% Loading bibliography style file
 \bibliographystyle{cas-model2-names}

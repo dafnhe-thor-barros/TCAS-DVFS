@@ -26,32 +26,32 @@ PROP = "TCAS-DVFS"
 def fig_arquitetura(caminho):
     fig, ax = plt.subplots(figsize=(7.2, 3.0))
     ax.axis("off")
-    ax.set_xlim(0, 10)
-    ax.set_ylim(0, 4.4)
+    ax.set_xlim(-0.5, 10.5)
+    ax.set_ylim(-0.2, 4.6)
 
     caixas = [
-        (0.1, 2.8, "5-Node Thermal Plant\n(4 silicon dies + radiator)"),
-        (3.5, 2.8, "Thermal Sensors\n(Gaussian noise $\\sigma_s = 0.25$ K)"),
-        (6.9, 2.8, "EKF (Joseph Form)\nState estimate $\\hat{T}_i(k)$"),
-        (6.9, 0.5, "ADMM-MPC ($\\Delta t = 2$ s)\nConstraint $\\hat{T}_i \\leq 83^\\circ$C"),
-        (3.5, 0.5, "SDP Task Scheduler\n($\\Delta t_{sched} = 120$ s)"),
-        (0.1, 0.5, "Safety Backstop\n($\\hat{T}_i \\geq 84.5^\\circ$C)")
+        (0.2, 2.8, "5-Node Thermal Plant\n(4 silicon dies + radiator)"),
+        (3.6, 2.8, "Thermal Sensors\n(Gaussian noise $\\sigma_s = 0.25$ K)"),
+        (7.0, 2.8, "EKF (Joseph Form)\nState estimate $\\hat{T}_i(k)$"),
+        (7.0, 0.5, "ADMM-MPC ($\\Delta t = 2$ s)\nConstraint $\\hat{T}_i \\leq 83^\\circ$C"),
+        (3.6, 0.5, "SDP Task Scheduler\n($\\Delta t_{sched} = 120$ s)"),
+        (0.2, 0.5, "Safety Backstop\n($\\hat{T}_i \\geq 84.5^\\circ$C)")
     ]
 
     for x, y, txt in caixas:
-        ax.add_patch(FancyBboxPatch((x, y), 3.0, 1.2, boxstyle="round,pad=0.05", fc="#eef3fa", ec="k"))
+        ax.add_patch(FancyBboxPatch((x, y), 3.0, 1.2, boxstyle="round,pad=0.06", fc="#eef3fa", ec="k", lw=0.9))
         ax.text(x + 1.5, y + 0.6, txt, ha="center", va="center", fontsize=7.5)
 
     seta = lambda a, b: ax.annotate("", xy=b, xytext=a, arrowprops=dict(arrowstyle="->", lw=1.1))
-    seta((3.15, 3.4), (3.5, 3.4))
-    seta((6.55, 3.4), (6.9, 3.4))
-    seta((8.4, 2.8), (8.4, 1.7))
-    seta((6.9, 1.1), (6.55, 1.1))
-    seta((3.5, 1.1), (3.15, 1.1))
-    seta((1.6, 1.7), (1.6, 2.8))
+    seta((3.25, 3.4), (3.6, 3.4))
+    seta((6.65, 3.4), (7.0, 3.4))
+    seta((8.5, 2.8), (8.5, 1.7))
+    seta((7.0, 1.1), (6.65, 1.1))
+    seta((3.6, 1.1), (3.25, 1.1))
+    seta((1.7, 1.7), (1.7, 2.8))
 
-    ax.text(1.75, 2.25, "Frequency $\\mathbf{f}(k)$ (GHz)", fontsize=7.5)
-    ax.text(0.1, 4.2, "Exogenous inputs: workload trace $\\boldsymbol{\\alpha}(t)$ and orbital flux $Q_{ext}(t)$", fontsize=7.5)
+    ax.text(1.85, 2.25, "Frequency $\\mathbf{f}(k)$ (GHz)", fontsize=7.5)
+    ax.text(0.2, 4.3, "Exogenous inputs: workload trace $\\boldsymbol{\\alpha}(t)$ and orbital flux $Q_{ext}(t)$", fontsize=7.5)
     fig.savefig(caminho, dpi=200, bbox_inches="tight")
     plt.close(fig)
     print(f"  [OK] Gerada: {caminho}")
@@ -104,14 +104,18 @@ def gerar_todas_figuras(pasta_saida, pasta_artigo_figuras, n_orb=3, semente=0):
     plt.close(fig)
     print(f"  [OK] Gerada: {p_trans}")
 
-    # 2. Trajetorias
+    # 2. Trajetorias com legenda explicita de cada die
     fig, ax = plt.subplots(3, 1, figsize=(7.2, 6.0), sharex=True)
+    cores = ["#1f77b4", "#ff7f0e", "#2ca02c", "#d62728"]
+    nomes_dies = ["Die 1", "Die 2", "Die 3", "Die 4"]
     for a, n in zip(ax, [REF, "Space-PID", PROP]):
-        a.plot(t, runs[n]["T"], lw=0.7)
+        for i in range(4):
+            a.plot(t, runs[n]["T"][:, i], lw=0.75, color=cores[i], label=nomes_dies[i])
         a.axhline(85, color="k", ls="--", lw=0.8)
         a.set_ylim(60, 90)
         a.set_ylabel(f"{n}\n" + r"Junction ($^\circ$C)")
         a.grid(alpha=0.3)
+    ax[0].legend(loc="upper right", ncol=4, fontsize=7.5, framealpha=0.9)
     ax[-1].set_xlabel("Time (min)")
     p_traj = os.path.join(pasta_saida, "fig_trajetorias.png")
     fig.savefig(p_traj, dpi=200, bbox_inches="tight")
