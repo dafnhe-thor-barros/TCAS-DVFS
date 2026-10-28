@@ -1,0 +1,62 @@
+{
+  "project": "TCAS-DVFS: Thermal-Crosstalk-Aware Scheduling and Model Predictive DVFS for Spaceborne AI",
+  "timestamp_utc": "2026-10-28T12:21:55.139942+00:00",
+  "environment": {
+    "python_version": "3.14.6",
+    "python_executable": "C:\\Python314\\python.exe",
+    "numpy_version": "2.5.4",
+    "matplotlib_version": "3.11.2",
+    "operating_system": "Windows 11 (10.0.26300)",
+    "architecture": "64bit",
+    "processor": "Intel64 Family 6 Model 126 Stepping 5, GenuineIntel"
+  },
+  "version_control": {
+    "vcs": "git",
+    "git_commit_hash": "unversioned_local_build_20261028",
+    "repository": "https://github.com/dafnhe-thor-barros/TCAS-DVFS"
+  },
+  "simulation_parameters": {
+    "orbit_scenario": "500-km circular Sun-Synchronous Orbit (synthetic)",
+    "altitude_km": 500.0,
+    "orbital_period_s": 5668.144369,
+    "total_orbits_nominal": 3,
+    "total_simulation_duration_s": 17004.0,
+    "time_samples": 34009,
+    "dt_plant_s": 0.5,
+    "dt_mpc_s": 2.0,
+    "ksub": 4,
+    "dt_sched_s": 120.0,
+    "prediction_horizon_steps": 30,
+    "control_horizon_steps": 8,
+    "thermal_cap_tcap_degC": 83.0,
+    "thermal_barrier_tbar_degC": 84.5,
+    "noise_seeds": [
+      0,
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7,
+      8,
+      9
+    ],
+    "lhs_samples": 30,
+    "lhs_perturbation_pct": 20.0
+  },
+  "execution_commands": {
+    "primary_campaign": "python experiments/run_experimentos.py --orbitas 3 --orbitas-ablacao 3 --sementes 10 --saida results",
+    "uncertainty_campaign": "python experiments/run_incerteza.py --amostras 30 --orbitas 3 --saida results",
+    "rainflow_validation": "python experiments/validacao_rainflow.py",
+    "temporal_convergence": "python experiments/run_convergencia_temporal.py"
+  },
+  "data_manifest": {
+    "results/tabela1.csv": "Desempenho consolidado das 8 pol\u00edticas de controle em 3 \u00f3rbitas (semente 0)",
+    "results/tabela_sementes.csv": "Estat\u00edsticas de dispers\u00e3o entre 10 sementes estoc\u00e1sticas de ru\u00eddo de sensor",
+    "results/ablacao.csv": "Estudo de abla\u00e7\u00e3o funcional arquitetural (3 \u00f3rbitas, semente 0)",
+    "results/amostras.csv": "Matriz de 30 amostras de amostragem por hipercubo latino (LHS, +-20%)",
+    "results/convergencia_temporal.csv": "Avalia\u00e7\u00e3o do erro num\u00e9rico com dt in [1.0, 0.5, 0.25, 0.125] s",
+    "results/metadata.json": "Metadados de reprodutibilidade e ambiente computacional"
+  }
+}
