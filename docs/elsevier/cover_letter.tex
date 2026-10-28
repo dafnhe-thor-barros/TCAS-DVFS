@@ -1,0 +1,65 @@
+\documentclass[11pt,a4paper]{article}
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage{amsmath}
+\usepackage{geometry}
+\geometry{top=2.5cm, bottom=2.5cm, left=2.5cm, right=2.5cm}
+\usepackage{hyperref}
+\usepackage{parskip}
+
+\begin{document}
+
+\begin{flushright}
+Serra, ES, Brazil \\
+October 28, 2026
+\end{flushright}
+
+\textbf{To:} \\
+The Editor-in-Chief \\
+\textit{Control Engineering Practice} \\
+Elsevier / International Federation of Automatic Control (IFAC)
+
+\vspace{0.4cm}
+\textbf{Subject:} Submission of Original Research Article titled \textit{''Thermal-Crosstalk-Aware Scheduling and Model Predictive Dynamic Voltage and Frequency Scaling for Spaceborne Multi-Chip AI Clusters in Deep Vacuum''}
+
+Dear Editor-in-Chief,
+
+We are pleased to submit our original research manuscript titled \textbf{''Thermal-Crosstalk-Aware Scheduling and Model Predictive Dynamic Voltage and Frequency Scaling for Spaceborne Multi-Chip AI Clusters in Deep Vacuum''} for consideration for publication in \textit{Control Engineering Practice}.
+
+\textbf{Motivation and Relevance to \textit{Control Engineering Practice}:} \\
+Modern Earth Observation satellites increasingly embed commercial off-the-shelf (COTS) multi-core neural accelerators to perform real-time autonomous data triaging in Low Earth Orbit (LEO). In the deep vacuum of space, convective heat transfer is absent ($h \approx 0$), restricting thermal dissipation strictly to solid conduction and highly non-linear fourth-order Stefan-Boltzmann radiation to deep space ($q \propto T^4$). In compact multi-chip architectures, intensive AI workloads induce severe lateral conductive heat diffusion (\textit{thermal crosstalk}), causing localized hot spots and steep spatial temperature gradients that severely degrade conventional terrestrial reactive governors (e.g., Linux ondemand and uncoordinated PID loops).
+
+This article addresses this critical engineering control challenge by developing and evaluating \textbf{TCAS-DVFS}:
+\begin{enumerate}
+    \item \textbf{Practical Control Design:} An Extended Kalman Filter (EKF) using Joseph-stabilized covariance updates estimates silicon junction temperatures under realistic sensor noise ($\sigma_s = 0.25\text{ K}$).
+    \item \textbf{Constrained LTV MPC-DVFS Formulation:} Operating frequencies are coordinated at 0.5~Hz via a discrete linear time-varying Model Predictive Controller that solves a condensed convex quadratic program using a warm-started ADMM splitting iteration, enforcing a conservative 83~$^\circ$C limit and actively penalizing inter-die gradients.
+    \item \textbf{Orbital Power Budgeting:} A predictive moving-average surrogate explicitly incorporates prospective direct solar flux, Earth albedo, terrestrial infrared, and eclipse transitions.
+    \item \textbf{Extensive Methodological Verification:} The closed-loop control system is rigorously evaluated over a three-orbit co-simulation (17,004~s, 34,009 steps), achieving zero observed violations of the 85~$^\circ$C flight limit, dampening peak gradients by 77.6\%, and maintaining competitive inference throughput (124.38~FPS). In addition, a 30-sample Latin Hypercube Sampling (LHS) campaign ($\pm20\%$ parameter variation) provides exact Clopper-Pearson coverage bounds (11.57\%), accompanied by temporal integrator convergence tests and ASTM E1049-85 rainflow validation.
+\end{enumerate}
+
+\textbf{Declarations:}
+\begin{itemize}
+    \item This manuscript represents original work that has not been published previously and is not currently under consideration for publication elsewhere.
+    \item Its publication has been approved by all authors and tacitly by the responsible authorities at the institution where the work was carried out.
+    \item The authors declare no competing financial or personal conflicts of interest.
+    \item All research code, nominal configurations, ASTM test harnesses, and reproducibility metadata have been released openly on GitHub (\url{https://github.com/dafnhe-thor-barros/TCAS-DVFS}).
+\end{itemize}
+
+Thank you for your time and consideration of our work. We look forward to hearing from you.
+
+\vspace{0.6cm}
+Sincerely,
+
+\textbf{Dafnhê Thor Castro de Martins Barros} (Corresponding Author) \\
+Graduate Program in Control and Automation Engineering (ProPECAut) \\
+Federal Institute of Espírito Santo (IFES) \\
+Serra, ES, Brazil \\
+E-mail: \texttt{dafnhe.barros@msn.com}
+
+\vspace{0.3cm}
+\textbf{Flávio Braz da Silva} \\
+Graduate Program in Control and Automation Engineering (ProPECAut) \\
+Federal Institute of Espírito Santo (IFES) \\
+E-mail: \texttt{flavio.silva@ifes.edu.br}
+
+\end{document}
