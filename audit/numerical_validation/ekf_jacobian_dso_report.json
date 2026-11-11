@@ -1,0 +1,268 @@
+{
+  "fase": "Fase 5 - Auditoria do EKF, Jacobiano e Barreira Termica DSO (A13, A14, A17)",
+  "A13_validacao_jacobiano_fronteiras": {
+    "interior_100_amostras": {
+      "max_rel_err": 5.068703294614977e-09,
+      "mean_rel_err": 3.790476177737944e-09,
+      "passou_1e_7": true
+    },
+    "casos_extremos_e_saturacao": {
+      "extremo_abaixo_200K_160K": {
+        "x_K": [
+          160.0,
+          175.0,
+          185.0,
+          195.0,
+          150.0
+        ],
+        "f_GHz": [
+          0.3,
+          0.3,
+          0.3,
+          0.3
+        ],
+        "rel_err_frobenius": 1.186561518455718e-10,
+        "max_abs_err": 1.3569659285117552e-11,
+        "passou_1e_7": true
+      },
+      "extremo_acima_500K_540K": {
+        "x_K": [
+          510.0,
+          525.0,
+          540.0,
+          580.0,
+          420.0
+        ],
+        "f_GHz": [
+          1.3,
+          1.3,
+          1.3,
+          1.3
+        ],
+        "rel_err_frobenius": 3.1247406476862483e-10,
+        "max_abs_err": 3.9960763864588245e-11,
+        "passou_1e_7": true
+      },
+      "vizinhanca_interna_200K_mais_1e_3": {
+        "x_K": [
+          200.001,
+          200.001,
+          200.001,
+          200.001,
+          190.0
+        ],
+        "f_GHz": [
+          0.3,
+          1.3,
+          0.3,
+          1.3
+        ],
+        "rel_err_frobenius": 7.847673096993796e-11,
+        "max_abs_err": 6.958003617718589e-12,
+        "passou_1e_7": true
+      },
+      "vizinhanca_interna_500K_menos_1e_3": {
+        "x_K": [
+          499.999,
+          499.999,
+          499.999,
+          499.999,
+          380.0
+        ],
+        "f_GHz": [
+          0.3,
+          1.3,
+          0.3,
+          1.3
+        ],
+        "rel_err_frobenius": 4.6526394470392083e-10,
+        "max_abs_err": 3.847215601648912e-11,
+        "passou_1e_7": true
+      },
+      "saturacao_frequencia_F_MIN": {
+        "x_K": [
+          340.0,
+          342.0,
+          344.0,
+          346.0,
+          320.0
+        ],
+        "f_GHz": [
+          0.3,
+          0.3,
+          0.3,
+          0.3
+        ],
+        "rel_err_frobenius": 3.6987041114665183e-10,
+        "max_abs_err": 3.953334881678927e-11,
+        "passou_1e_7": true
+      },
+      "saturacao_frequencia_F_MAX": {
+        "x_K": [
+          350.0,
+          352.0,
+          354.0,
+          356.0,
+          335.0
+        ],
+        "f_GHz": [
+          1.3,
+          1.3,
+          1.3,
+          1.3
+        ],
+        "rel_err_frobenius": 3.621895982356522e-10,
+        "max_abs_err": 3.944586324244881e-11,
+        "passou_1e_7": true
+      }
+    },
+    "analise_subgradiente_quinas_200K_500K": {
+      "quina_exata_200K": {
+        "erro_rel_derivada_lateral_esquerda_saturada": 1.2033432082461508e-08,
+        "salto_subgradiente_direita_vs_esquerda_1_sobre_s": 3.7505887284794426e-05,
+        "explicacao": "Em T=200 K, clip(T, 200, 500) possui derivada à esquerda nula (coincidindo com jacobiano) e derivada à direita positiva."
+      },
+      "quina_exata_500K": {
+        "erro_rel_derivada_lateral_direita_saturada": 5.1111700900251364e-08,
+        "salto_subgradiente_esquerda_vs_direita_1_sobre_s": 0.04836469580382641,
+        "explicacao": "Em T=500 K, clip(T, 200, 500) possui derivada à direita nula (coincidindo com jacobiano) e derivada à esquerda positiva."
+      }
+    }
+  },
+  "A14_observabilidade_e_consistencia_ekf": {
+    "observabilidade": {
+      "medicao_completa_I5": {
+        "rank": 5,
+        "dimensao_estado": 5,
+        "completamente_observavel": true,
+        "cond_observability_matrix": 1.1840050566042295
+      },
+      "medicao_apenas_4_dies_sem_sensor_radiador": {
+        "rank": 5,
+        "dimensao_estado": 5,
+        "radiador_observavel_pelos_dies": true,
+        "cond_observability_matrix": 27.045745889360923
+      }
+    },
+    "desempenho_filtragem_1_orbita": {
+      "n_steps": 11337,
+      "sigma_sensor_K": 0.25,
+      "rmse_sensor_bruto_por_estado_K": [
+        0.251776326687679,
+        0.2505457304828469,
+        0.24812442825503653,
+        0.2473839389291559,
+        0.24867833327373007
+      ],
+      "rmse_ekf_por_estado_K": [
+        0.10066060564160932,
+        0.10022951716120793,
+        0.09837415726432129,
+        0.09803651187308719,
+        0.13748479838998418
+      ],
+      "rmse_medio_bruto_K": 0.24930175152568967,
+      "rmse_medio_ekf_K": 0.10695711806604198,
+      "reducao_erro_estimacao_pct": 57.09732586655316
+    },
+    "consistencia_inovacao_e_covariancia": {
+      "media_inovacao_por_estado_K": [
+        -0.0005074454205820184,
+        0.00033783744562548146,
+        -3.176102615043419e-05,
+        -0.0002734537221585991,
+        3.5804690329313846e-05
+      ],
+      "std_inovacao_por_estado_K": [
+        0.26965498513503566,
+        0.26815469452392937,
+        0.2662346217115403,
+        0.2653487147551913,
+        0.28238578649714746
+      ],
+      "nis_medio_empirico": 3.88465200862263,
+      "nis_esperado_teorico_chi2_5": 5.0,
+      "max_erro_simetria_P_frobenius": 1.0039852617594104e-18,
+      "min_autovalor_P_trajetoria": 0.01789950922595117,
+      "covariancia_estritamente_simetrica_e_psd": true
+    }
+  },
+  "A17_validacao_barreira_dso": [
+    {
+      "cenario": "S1_surto_fluxo_externo_mais_45W",
+      "com_DSO_84_5C": {
+        "T_max_C": 82.70781006747336,
+        "n_ativacoes_barreira_DSO": 0,
+        "tempo_acima_84_5C_s": 0.0,
+        "tempo_acima_85_0C_s": 0.0,
+        "integral_violacao_acima_85C_K_s": 0.0,
+        "max_excesso_acima_85C_K": 0.0
+      },
+      "sem_DSO": {
+        "T_max_C": 82.70781006747336,
+        "n_ativacoes_barreira_DSO": 0,
+        "tempo_acima_84_5C_s": 0.0,
+        "tempo_acima_85_0C_s": 0.0,
+        "integral_violacao_acima_85C_K_s": 0.0,
+        "max_excesso_acima_85C_K": 0.0
+      }
+    },
+    {
+      "cenario": "S2_radiador_saturado_77C",
+      "com_DSO_84_5C": {
+        "T_max_C": 87.0445617283155,
+        "n_ativacoes_barreira_DSO": 509,
+        "tempo_acima_84_5C_s": 247.0,
+        "tempo_acima_85_0C_s": 213.0,
+        "integral_violacao_acima_85C_K_s": 272.0723715756548,
+        "max_excesso_acima_85C_K": 2.0445617283155
+      },
+      "sem_DSO": {
+        "T_max_C": 87.0445617283155,
+        "n_ativacoes_barreira_DSO": 0,
+        "tempo_acima_84_5C_s": 247.0,
+        "tempo_acima_85_0C_s": 213.0,
+        "integral_violacao_acima_85C_K_s": 272.0723715756548,
+        "max_excesso_acima_85C_K": 2.0445617283155
+      }
+    },
+    {
+      "cenario": "S3_condicao_inicial_adversa_acima_84_5C",
+      "com_DSO_84_5C": {
+        "T_max_C": 85.03493351145744,
+        "n_ativacoes_barreira_DSO": 162,
+        "tempo_acima_84_5C_s": 75.5,
+        "tempo_acima_85_0C_s": 22.0,
+        "integral_violacao_acima_85C_K_s": 0.5057706052705555,
+        "max_excesso_acima_85C_K": 0.034933511457438726
+      },
+      "sem_DSO": {
+        "T_max_C": 85.03493351145744,
+        "n_ativacoes_barreira_DSO": 0,
+        "tempo_acima_84_5C_s": 75.5,
+        "tempo_acima_85_0C_s": 22.0,
+        "integral_violacao_acima_85C_K_s": 0.5057706052705555,
+        "max_excesso_acima_85C_K": 0.034933511457438726
+      }
+    },
+    {
+      "cenario": "S4_descasamento_parametrico_severo_Rr_1_50x",
+      "com_DSO_84_5C": {
+        "T_max_C": 83.96314767021244,
+        "n_ativacoes_barreira_DSO": 0,
+        "tempo_acima_84_5C_s": 0.0,
+        "tempo_acima_85_0C_s": 0.0,
+        "integral_violacao_acima_85C_K_s": 0.0,
+        "max_excesso_acima_85C_K": 0.0
+      },
+      "sem_DSO": {
+        "T_max_C": 83.96314767021244,
+        "n_ativacoes_barreira_DSO": 0,
+        "tempo_acima_84_5C_s": 0.0,
+        "tempo_acima_85_0C_s": 0.0,
+        "integral_violacao_acima_85C_K_s": 0.0,
+        "max_excesso_acima_85C_K": 0.0
+      }
+    }
+  ]
+}
