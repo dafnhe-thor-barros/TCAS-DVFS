@@ -12,7 +12,8 @@
   },
   "version_control": {
     "vcs": "git",
-    "repository": "https://github.com/dafnhe-thor-barros/TCAS-DVFS"
+    "repository": "https://github.com/dafnhe-thor-barros/TCAS-DVFS",
+    "git_commit_hash": "a8027ee943659c61a09f3abb7043e22b89e74941"
   },
   "simulation_parameters": {
     "orbit_scenario": "500-km circular Sun-Synchronous Orbit (synthetic)",
@@ -55,12 +56,12 @@
     "temporal_convergence": "python experiments/run_convergencia_temporal.py"
   },
   "data_manifest": {
-    "results/tabela1.csv": "Desempenho consolidado das 8 políticas de controle em 3 órbitas (semente 0)",
-    "results/tabela_sementes.csv": "Estatísticas de dispersão entre 10 sementes estocásticas de ruído de sensor",
-    "results/ablacao.csv": "Estudo de ablação funcional arquitetural (1 órbita, semente 0)",
+    "results/tabela1.csv": "Desempenho consolidado das 8 pol\u00edticas de controle em 3 \u00f3rbitas (semente 0)",
+    "results/tabela_sementes.csv": "Estat\u00edsticas de dispers\u00e3o entre 10 sementes estoc\u00e1sticas de ru\u00eddo de sensor",
+    "results/ablacao.csv": "Estudo de abla\u00e7\u00e3o funcional arquitetural (1 \u00f3rbita, semente 0)",
     "results/amostras.csv": "Matriz de 30 amostras de amostragem por hipercubo latino (LHS, +-20%)",
-    "results/convergencia_temporal.csv": "Avaliação do erro numérico com dt in [1.0, 0.5, 0.25, 0.125] s",
-    "results/fig_validacao_pinn.png": "Curvas de validação out-of-sample da PINN térmica frente ao ground truth Heun",
+    "results/convergencia_temporal.csv": "Avalia\u00e7\u00e3o do erro num\u00e9rico com dt in [1.0, 0.5, 0.25, 0.125] s",
+    "results/fig_validacao_pinn.png": "Curvas de valida\u00e7\u00e3o out-of-sample da PINN t\u00e9rmica frente ao ground truth Heun",
     "results/metadata.json": "Metadados de reprodutibilidade e ambiente computacional"
   }
 }
