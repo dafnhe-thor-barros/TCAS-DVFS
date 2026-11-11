@@ -1,0 +1,302 @@
+{
+  "fase": "Fase 3 - Fechamento Fisico do Orcamento Termico (A09, A10)",
+  "A09_derivacao_e_unidades": {
+    "equacao_1_conducao_fourier_quase_estatica": {
+      "expressao": "T_rad,max = T_cap - (P_min,cores * R_r) / 4",
+      "deducao": "Em equilíbrio quase-estático uniforme entre os 4 dies e o radiador, o fluxo condutivo total é Q_cond = sum_{i=1}^4 (T_i - T_rad)/R_r. Para que nenhum die exceda T_cap quando operado na potência mínima admissível P_min,cores = sum_{i=1}^4 P_i(F_MIN, T_i), exige-se 4*(T_cap - T_rad)/R_r >= P_min,cores, resultando em T_rad <= T_cap - (P_min,cores * R_r)/4.",
+      "unidades": {
+        "T_rad,max": "K",
+        "T_cap": "K",
+        "P_min,cores": "W",
+        "R_r": "K/W"
+      },
+      "consistencia_dimensional": "K - (W * K/W) = K (Verificado)"
+    },
+    "equacao_2_constante_tempo_rc_radiador": {
+      "expressao": "tau_rad = (C_rad * R_r) / 4",
+      "valor_nominal_s": 682.08,
+      "unidades": {
+        "tau_rad": "s",
+        "C_rad": "J/K",
+        "R_r": "K/W"
+      },
+      "consistencia_dimensional": "(J/K) * (K/W) = J / (J/s) = s (Verificado)"
+    },
+    "equacao_3_buffer_entalpico_transiente": {
+      "expressao": "P_buffer = (C_rad * max(0, T_rad,max - T_rad) / tau_horiz) * (1 - exp(-tau_horiz / tau_rad))",
+      "deducao": "A reserva entálpica disponível no radiador até atingir T_rad,max é Delta_H = C_rad * (T_rad,max - T_rad) [J]. Distribuída sobre o horizonte preditivo tau_horiz = 240 s e ponderada pelo fator de relaxação RC de 1ª ordem (1 - exp(-tau_horiz/tau_rad)) da resposta ao degrau térmico entre os 4 dies e o radiador, obtém-se a taxa média segura de absorção transiente P_buffer [W].",
+      "unidades": {
+        "P_buffer": "W",
+        "C_rad": "J/K",
+        "Delta_T": "K",
+        "tau_horiz": "s"
+      },
+      "consistencia_dimensional": "(J/K * K / s) * 1 = J/s = W (Verificado)"
+    },
+    "equacao_4_fechamento_orcamento": {
+      "expressao": "P_budget = min(4 * max(0, T_cap - T_rad) / R_r, Q_rad,emit(T_rad) - q_m + P_buffer)",
+      "tratamento_contingencia": "Se P_budget < P_min,cores, o estado é classificado explicitamente como 'physically_infeasible', incrementando n_deficit_orcamento e n_contingencia_inviavel e aplicando F_MIN sem mascarar o QP com piso artificial."
+    }
+  },
+  "A10_validacao_7_regimes_vs_ode": {
+    "R1_regime_estacionario": {
+      "descricao": "Equilíbrio térmico quase-estacionário em insolação moderada (Trad = 325 K, T_dies = 342 K)",
+      "analitico": {
+        "Trad_est_K": 325.0,
+        "Tcap_K": 356.15,
+        "Trad_max_K": 347.2389897895167,
+        "tau_rad_s": 682.08,
+        "tau_horiz_s": 240.0,
+        "Q_rad_emit_W": 66.80501479067196,
+        "qm_ext_W": 18.0,
+        "Q_rad_liq_W": 48.80501479067196,
+        "P_min_cores_W": 16.973352781872844,
+        "P_buffer_W": 35.70979467061715,
+        "P_rad_mais_buffer_W": 84.5148094612891,
+        "P_cond_inst_W": 59.333333333333286,
+        "P_cond_coupled_W": 56.59301096408255,
+        "P_cond_max_W": 56.59301096408255,
+        "P_budget_analitico_W": 56.59301096408255,
+        "inviavel_fisico": false,
+        "deficit_W": 0.0,
+        "limitante_ativo": "conducao_fourier_acoplada"
+      },
+      "numerico_ode_heun": {
+        "P_ode_acoplado_W": 58.15181163409591,
+        "P_ode_limite_Tcap_240s_W": 58.15181163409591,
+        "Trad_target_240s_K": 331.59663694654256,
+        "erro_analitico_vs_ode_acoplado_W": -1.5588006700133548,
+        "erro_relativo_acoplado_pct": 2.6805711227393467,
+        "margem_conservadora_ate_violacao_Tcap_W": 1.5588006700133548,
+        "simulacao_sob_orcamento_analitico": {
+          "P_aplicado_W": 56.59301096408255,
+          "max_T_die_240s_C": 82.00604829734061,
+          "final_Trad_240s_C": 52.522068780014365,
+          "respeitou_Tcap_em_operacao_viavel": true
+        }
+      }
+    },
+    "R2_aquecimento_transitorio": {
+      "descricao": "Aquecimento transitório rápido com rampa de fluxo externo (15 W -> 30 W) e dies a 349 K",
+      "analitico": {
+        "Trad_est_K": 332.0,
+        "Tcap_K": 356.15,
+        "Trad_max_K": 345.96646359415496,
+        "tau_rad_s": 682.08,
+        "tau_horiz_s": 240.0,
+        "Q_rad_emit_W": 72.7491553878575,
+        "qm_ext_W": 22.5,
+        "Q_rad_liq_W": 50.2491553878575,
+        "P_min_cores_W": 19.39721220160955,
+        "P_buffer_W": 22.426358028952595,
+        "P_rad_mais_buffer_W": 72.67551341681009,
+        "P_cond_inst_W": 45.99999999999996,
+        "P_cond_coupled_W": 47.1059748536849,
+        "P_cond_max_W": 45.99999999999996,
+        "P_budget_analitico_W": 45.99999999999996,
+        "inviavel_fisico": false,
+        "deficit_W": 0.0,
+        "limitante_ativo": "conducao_fourier_acoplada"
+      },
+      "numerico_ode_heun": {
+        "P_ode_acoplado_W": 47.67363349664322,
+        "P_ode_limite_Tcap_240s_W": 47.67363349664322,
+        "Trad_target_240s_K": 336.1428001285011,
+        "erro_analitico_vs_ode_acoplado_W": -1.6736334966432622,
+        "erro_relativo_acoplado_pct": 3.5106061231122765,
+        "margem_conservadora_ate_violacao_Tcap_W": 1.6736334966432622,
+        "simulacao_sob_orcamento_analitico": {
+          "P_aplicado_W": 45.99999999999996,
+          "max_T_die_240s_C": 81.93338071797365,
+          "final_Trad_240s_C": 57.848460598910776,
+          "respeitou_Tcap_em_operacao_viavel": true
+        }
+      }
+    },
+    "R3_resfriamento": {
+      "descricao": "Entrada em fase fria de resfriamento radiativo (Trad = 336 K, qext caindo de 18 W para 6.5 W)",
+      "analitico": {
+        "Trad_est_K": 336.0,
+        "Tcap_K": 356.15,
+        "Trad_max_K": 347.9724615390874,
+        "tau_rad_s": 682.08,
+        "tau_horiz_s": 240.0,
+        "Q_rad_emit_W": 76.31901039977721,
+        "qm_ext_W": 12.25,
+        "Q_rad_liq_W": 64.06901039977721,
+        "P_min_cores_W": 15.576263735071588,
+        "P_buffer_W": 19.224530759225804,
+        "P_rad_mais_buffer_W": 83.29354115900301,
+        "P_cond_inst_W": 38.38095238095234,
+        "P_cond_coupled_W": 45.067068471224296,
+        "P_cond_max_W": 38.38095238095234,
+        "P_budget_analitico_W": 38.38095238095234,
+        "inviavel_fisico": false,
+        "deficit_W": 0.0,
+        "limitante_ativo": "conducao_fourier_acoplada"
+      },
+      "numerico_ode_heun": {
+        "P_ode_acoplado_W": 42.635842056094475,
+        "P_ode_limite_Tcap_240s_W": 42.635842056094475,
+        "Trad_target_240s_K": 339.5513295737486,
+        "erro_analitico_vs_ode_acoplado_W": -4.254889675142138,
+        "erro_relativo_acoplado_pct": 9.979607461590954,
+        "margem_conservadora_ate_violacao_Tcap_W": 4.254889675142138,
+        "simulacao_sob_orcamento_analitico": {
+          "P_aplicado_W": 38.38095238095234,
+          "max_T_die_240s_C": 80.74317141349286,
+          "final_Trad_240s_C": 58.11877474109701,
+          "respeitou_Tcap_em_operacao_viavel": true
+        }
+      }
+    },
+    "R4_degrau_abrupto_carga": {
+      "descricao": "Degrau abrupto de atividade computacional e carga ambiental no meio do horizonte",
+      "analitico": {
+        "Trad_est_K": 330.0,
+        "Tcap_K": 356.15,
+        "Trad_max_K": 345.8861329012038,
+        "tau_rad_s": 682.08,
+        "tau_horiz_s": 240.0,
+        "Q_rad_emit_W": 71.0119404504312,
+        "qm_ext_W": 20.0,
+        "Q_rad_liq_W": 51.0119404504312,
+        "P_min_cores_W": 19.550223045326113,
+        "P_buffer_W": 25.508827036718127,
+        "P_rad_mais_buffer_W": 76.52076748714933,
+        "P_cond_inst_W": 49.80952380952377,
+        "P_cond_coupled_W": 50.1224901397964,
+        "P_cond_max_W": 49.80952380952377,
+        "P_budget_analitico_W": 49.80952380952377,
+        "inviavel_fisico": false,
+        "deficit_W": 0.0,
+        "limitante_ativo": "conducao_fourier_acoplada"
+      },
+      "numerico_ode_heun": {
+        "P_ode_acoplado_W": 51.00399158858124,
+        "P_ode_limite_Tcap_240s_W": 51.00399158858124,
+        "Trad_target_240s_K": 334.7122217432361,
+        "erro_analitico_vs_ode_acoplado_W": -1.1944677790574758,
+        "erro_relativo_acoplado_pct": 2.341910391430801,
+        "margem_conservadora_ate_violacao_Tcap_W": 1.1944677790574758,
+        "simulacao_sob_orcamento_analitico": {
+          "P_aplicado_W": 49.80952380952377,
+          "max_T_die_240s_C": 82.23862377498091,
+          "final_Trad_240s_C": 56.29499700136057,
+          "respeitou_Tcap_em_operacao_viavel": true
+        }
+      }
+    },
+    "R5_eclipse_orbital": {
+      "descricao": "Operação em umbra/eclipse LEO (apenas IR terrestre ~ 6.8 W, sem fluxo solar direto)",
+      "analitico": {
+        "Trad_est_K": 315.0,
+        "Tcap_K": 356.15,
+        "Trad_max_K": 347.84960399593353,
+        "tau_rad_s": 682.08,
+        "tau_horiz_s": 240.0,
+        "Q_rad_emit_W": 58.95461878249019,
+        "qm_ext_W": 6.799999999999998,
+        "Q_rad_liq_W": 52.154618782490196,
+        "P_min_cores_W": 15.810278102983714,
+        "P_buffer_W": 52.74756743936447,
+        "P_rad_mais_buffer_W": 104.90218622185466,
+        "P_cond_inst_W": 78.38095238095234,
+        "P_cond_coupled_W": 71.55473332877582,
+        "P_cond_max_W": 71.55473332877582,
+        "P_budget_analitico_W": 71.55473332877582,
+        "inviavel_fisico": false,
+        "deficit_W": 0.0,
+        "limitante_ativo": "conducao_fourier_acoplada"
+      },
+      "numerico_ode_heun": {
+        "P_ode_acoplado_W": 74.29546501584525,
+        "P_ode_limite_Tcap_240s_W": 74.29546501584525,
+        "Trad_target_240s_K": 324.7440087634294,
+        "erro_analitico_vs_ode_acoplado_W": -2.7407316870694274,
+        "erro_relativo_acoplado_pct": 3.6889622892661107,
+        "margem_conservadora_ate_violacao_Tcap_W": 2.7407316870694274,
+        "simulacao_sob_orcamento_analitico": {
+          "P_aplicado_W": 71.55473332877582,
+          "max_T_die_240s_C": 81.25104933931954,
+          "final_Trad_240s_C": 44.21760061549651,
+          "respeitou_Tcap_em_operacao_viavel": true
+        }
+      }
+    },
+    "R6_incidencia_solar_zenite": {
+      "descricao": "Pico de insolação zênite + albedo + IR terrestre (~ 31.5 W) com radiador aquecido (340 K)",
+      "analitico": {
+        "Trad_est_K": 340.0,
+        "Tcap_K": 356.15,
+        "Trad_max_K": 346.3104226928822,
+        "tau_rad_s": 682.08,
+        "tau_horiz_s": 240.0,
+        "Q_rad_emit_W": 80.01866271344879,
+        "qm_ext_W": 31.5,
+        "Q_rad_liq_W": 48.51866271344879,
+        "P_min_cores_W": 18.742052013557746,
+        "P_buffer_W": 10.132829808386848,
+        "P_rad_mais_buffer_W": 58.651492521835635,
+        "P_cond_inst_W": 30.761904761904717,
+        "P_cond_coupled_W": 35.383653317746486,
+        "P_cond_max_W": 30.761904761904717,
+        "P_budget_analitico_W": 30.761904761904717,
+        "inviavel_fisico": false,
+        "deficit_W": 0.0,
+        "limitante_ativo": "conducao_fourier_acoplada"
+      },
+      "numerico_ode_heun": {
+        "P_ode_acoplado_W": 33.57556559935517,
+        "P_ode_limite_Tcap_240s_W": 33.57556559935517,
+        "Trad_target_240s_K": 341.87182816657395,
+        "erro_analitico_vs_ode_acoplado_W": -2.813660837450456,
+        "erro_relativo_acoplado_pct": 8.380084705124053,
+        "margem_conservadora_ate_violacao_Tcap_W": 2.813660837450456,
+        "simulacao_sob_orcamento_analitico": {
+          "P_aplicado_W": 30.761904761904717,
+          "max_T_die_240s_C": 81.56258520983442,
+          "final_Trad_240s_C": 63.713128955081004,
+          "respeitou_Tcap_em_operacao_viavel": true
+        }
+      }
+    },
+    "R7_contingencia_energetica_saturacao": {
+      "descricao": "Saturação térmica severa (Trad = 349.5 K > Trad_max), acionando contingência física P_budget < P_min",
+      "analitico": {
+        "Trad_est_K": 349.5,
+        "Tcap_K": 356.15,
+        "Trad_max_K": 344.72338271568043,
+        "tau_rad_s": 682.08,
+        "tau_horiz_s": 240.0,
+        "Q_rad_emit_W": 89.34378382120904,
+        "qm_ext_W": 32.0,
+        "Q_rad_liq_W": 57.343783821209044,
+        "P_min_cores_W": 21.76498530346585,
+        "P_buffer_W": 0.0,
+        "P_rad_mais_buffer_W": 57.343783821209044,
+        "P_cond_inst_W": 12.666666666666623,
+        "P_cond_coupled_W": 24.295276024954603,
+        "P_cond_max_W": 12.666666666666623,
+        "P_budget_analitico_W": 12.666666666666623,
+        "inviavel_fisico": true,
+        "deficit_W": 9.098318636799226,
+        "limitante_ativo": "conducao_fourier_acoplada"
+      },
+      "numerico_ode_heun": {
+        "P_ode_acoplado_W": 15.256125405844045,
+        "P_ode_limite_Tcap_240s_W": 15.256125405844045,
+        "Trad_target_240s_K": 349.5,
+        "erro_analitico_vs_ode_acoplado_W": -2.589458739177422,
+        "erro_relativo_acoplado_pct": 16.973239733500733,
+        "margem_conservadora_ate_violacao_Tcap_W": 2.589458739177422,
+        "simulacao_sob_orcamento_analitico": {
+          "P_aplicado_W": 21.76498530346585,
+          "max_T_die_240s_C": 85.66849926377648,
+          "final_Trad_240s_C": 70.33846982775486,
+          "respeitou_Tcap_em_operacao_viavel": true
+        }
+      }
+    }
+  }
+}

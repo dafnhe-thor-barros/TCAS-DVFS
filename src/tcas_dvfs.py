@@ -342,10 +342,16 @@ def gov_tcas_dvfs(usa_sched=True, usa_mpc=True, hp=30, hc=8, ksub=None, dt=DT, s
             else:
                 P_buffer = 0.0
             
-            # 4. Limite de conducao termica instantaneo dies -> radiador sem violar Tcap
-            P_cond_max = 4.0 * max(0.0, Tcap_K - Trad_est) / float(par["RR"])
+            # 4. Limite de conducao termica dies -> radiador sem violar Tcap (instantaneo e acoplado no horizonte)
+            # Instantaneo: 4*(Tcap - Trad_est)/RR
+            # Acoplado ao aquecimento do radiador em tau_horiz: Trad(tau_h) + P*RR/4 <= Tcap
+            # ==> P * (1 + tau_horiz/tau_rad) <= P_cond_inst + (tau_horiz/tau_rad) * Q_rad_liq
+            P_cond_inst = 4.0 * max(0.0, Tcap_K - Trad_est) / float(par["RR"])
+            alpha_h = tau_horiz / tau_rad
+            P_cond_coupled = max(0.0, (P_cond_inst + alpha_h * Q_rad_liq) / (1.0 + alpha_h))
+            P_cond_max = min(P_cond_inst, P_cond_coupled)
             
-            # Orcamento fisico admissivel: limitado pela conducao e pela rejeicao liquida com buffer
+            # Orcamento fisico admissivel: limitado pela conducao acoplada e pela rejeicao liquida com buffer
             P_budget_fisico = min(P_cond_max, Q_rad_liq + P_buffer)
             
             if P_budget_fisico < P_min_cores:
