@@ -36,7 +36,8 @@ def avaliar_convergencia(n_orb=1, semente=0):
     for dt in passos_dt:
         ksub = int(round(2.0 / dt))
         sc = C.cenario(n_orb=n_orb, dt=dt)
-        gov = D.gov_tcas_dvfs(ksub=ksub)
+        # Fix C01: passa dt explicitamente para manter dt_MPC = 2.0 s e sched_s = 120.0 s invariantes
+        gov = D.gov_tcas_dvfs(dt=dt, ksub=ksub, mpc_period_s=2.0, sched_s=120.0)
         
         t0 = time.time()
         r = C.simular(sc, gov, seed=semente)

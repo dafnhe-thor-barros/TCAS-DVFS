@@ -73,8 +73,9 @@ def figuras(runs, sc, pasta):
         ax[0].plot(t, r["T"].max(1), lw=1.0, label=n)
         ax[1].plot(t, suav(r["fps"]), lw=1.0, label=n)
     ax[0].axhline(85, color="k", ls="--", lw=0.8); ax[0].set_ylim(20, 140)
-    ax[0].set_ylabel("T_max (C) [eixo cortado em 140 C]"); ax[1].set_ylabel("FPS agregado (media 120 s)")
-    ax[1].set_xlabel("Tempo (min)"); ax[0].legend(fontsize=7, ncol=2); [a.grid(alpha=0.3) for a in ax]
+    ax[0].set_ylabel(r"Maximum Temperature $T_{\max}$ ($^\circ$C)", fontsize=8.5); ax[1].set_ylabel("Throughput (FPS, 120-s MA)", fontsize=8.5)
+    ax[1].set_xlabel("Time (min)", fontsize=9); ax[0].legend(fontsize=7, ncol=2); [a.grid(alpha=0.3) for a in ax]
+    fig.tight_layout(h_pad=1.2)
     fig.savefig(os.path.join(pasta, "fig_transiente.png"), dpi=200, bbox_inches="tight"); plt.close(fig)
 
     fig, ax = plt.subplots(3, 1, figsize=(7.2, 6.0), sharex=True)

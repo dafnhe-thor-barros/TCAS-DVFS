@@ -1,6 +1,6 @@
 {
   "project": "TCAS-DVFS: Thermal-Crosstalk-Aware Scheduling and Model Predictive DVFS for Spaceborne AI",
-  "timestamp_utc": "2026-10-28T12:21:55.139942+00:00",
+  "timestamp_utc": "2026-11-11T18:04:26.090983+00:00",
   "environment": {
     "python_version": "3.14.6",
     "python_executable": "C:\\Python314\\python.exe",
@@ -12,7 +12,7 @@
   },
   "version_control": {
     "vcs": "git",
-    "git_commit_hash": "unversioned_local_build_20261028",
+    "git_commit_hash": "e29efcc2b2ad8082a176552e39f020e86b08bbe4",
     "repository": "https://github.com/dafnhe-thor-barros/TCAS-DVFS"
   },
   "simulation_parameters": {

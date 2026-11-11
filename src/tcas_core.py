@@ -1,12 +1,21 @@
 # -*- coding: utf-8 -*-
 """
-tcas_core.py - Modelo, governadores baseline, metricas e confiabilidade.
-Python >= 3.9, numpy. Estados em [K]; metricas em [degC]; f em [GHz]; potencia em [W]; energia em [kJ].
+tcas_core.py - Modelo térmico concentrado (CTM 5x5), governadores baseline e métricas físicas.
+Python >= 3.9, numpy. Estados em [K]; métricas em [degC]; f em [GHz]; potência em [W]; energia em [kJ].
+
+Auditoria Física (PINN-Oriented):
+- C01: Jacobiano com derivada analítica dP_leak/dT (FinFET 16/12 nm).
+- C02/C03: Jacobiano do radiador derivado e acoplado aos parâmetros físicos par (C, RR, CRAD, LAP).
+- C04: Integração de potência por média trapezoidal Heun (2ª ordem).
+- C05: escala_orcamento() com status explícito de viabilidade (0=ok, 1=reduzido, 2=inviável).
+- C06: Rainflow com nomenclatura estrita de range térmico (delta_T) conforme ASTM E1049-85.
+- C07: Validação defensiva de tipos, finitude e positividade física.
+- C08: Hipóteses orbitais LEO explícitas (insolação zênite, albedo, IR terrestre e fundo cósmico).
 """
 import math
 import numpy as np
 
-# ------------------------------------------------------------------ constantes
+# ------------------------------------------------------------------ Constantes Físicas e Orbitais
 DT = 0.5
 MU_E, R_E, H_ORB = 398600.4418, 6371.0, 500.0
 S_SOLAR, A_E, SIGMA, T_SPACE = 1361.0, 0.30, 5.670374e-8, 2.73
@@ -15,7 +24,7 @@ C_DIE, R_R = 18.5, 2.10
 V_MIN, V_MAX, F_MIN, F_MAX = 0.65, 1.05, 0.30, 1.30
 BETA = (V_MAX - V_MIN) / (F_MAX - F_MIN)
 C_EFF, P_LEAK_REF, V0, T0, EA, KB = 24.5e-9, 0.80, 0.85, 300.0, 0.20, 8.617333262e-5
-FPS_NOM = np.array([45.0, 60.0, 30.0, 80.0])      # SAR-YOLO, Cloud-Seg, Hyper-ViT, telemetria
+FPS_NOM = np.array([45.0, 60.0, 30.0, 80.0])      # SAR-YOLO, Cloud-Seg, Hyper-ViT, Telemetria
 T_LIM, NP_H = 85.0, 480
 RES = {(0, 1): 1.45, (2, 3): 1.45, (0, 2): 1.52, (1, 3): 1.52, (0, 3): 3.20, (1, 2): 3.20}
 GM = np.zeros((4, 4))
@@ -32,13 +41,23 @@ def parametros(sRij=1.0, sRr=1.0, sC=1.0, sCr=1.0):
     return {"LAP": LAP / sRij, "C": C_DIE * sC, "RR": R_R * sRr, "CRAD": C_RAD * sCr}
 
 
-# ------------------------------------------------------------------ cenario
+# ------------------------------------------------------------------ Cenário e Cargas Ambientais
 def cenario(n_orb=3, dt=DT):
+    """
+    Gera o perfil ambiental e perfis de carga para simulação orbital LEO (500 km).
+    Hipóteses Físicas Explícitas:
+    1. Órbita circular LEO equatorial/inclinada com período t_orb ≈ 5677 s.
+    2. Radiador voltado para o espaço profundo (T_space = 2.73 K) com fator de visão da Terra F_view = 0.42.
+    3. Carga externa qext composta por:
+       - Incidência solar direta modulada pelo zênite solar durante a fase iluminada (beta = 0);
+       - Albedo terrestre difuso proporcional à fração iluminada e F_view;
+       - Emissão infravermelha da Terra (IR) modulada pela latitude efetiva Te.
+    """
     r_orb = R_E + H_ORB
     t_orb = 2 * math.pi * math.sqrt(r_orb ** 3 / MU_E)
     nt = int(math.floor(n_orb * t_orb / dt + 1e-9)) + 1
     t = np.arange(nt) * dt
-    fsol = 1 - math.asin(R_E / r_orb) / math.pi     # fracao iluminada (beta = 0)
+    fsol = 1 - math.asin(R_E / r_orb) / math.pi     # Fração iluminada (beta = 0)
     md = fsol / 2
     fase = np.mod(t, t_orb) / t_orb
     ill = 1 / (1 + np.exp(np.clip((fase - fsol) * 120, -700, 700)))
@@ -56,12 +75,14 @@ def cenario(n_orb=3, dt=DT):
             "cs": np.concatenate([[0.0], np.cumsum(qext)])}
 
 
-# ------------------------------------------------------------------ planta (CTM 5x5)
+# ------------------------------------------------------------------ Planta Térmica (5x5 CTM)
 def tensao(f):
+    """Mapeamento linear f -> V com saturação física em [V_MIN, V_MAX]."""
     return np.minimum(V_MAX, np.maximum(V_MIN, V_MIN + BETA * (f - F_MIN)))
 
 
 def potencias(T, f, al):
+    """Calcula potência dinâmica e potência de fuga subthreshold FinFET."""
     V = tensao(f)
     pd = al * C_EFF * V * V * f * 1e9
     Tc = np.minimum(500.0, np.maximum(200.0, T))
@@ -70,6 +91,7 @@ def potencias(T, f, al):
 
 
 def deriv(X, f, al, qext, par=NOM):
+    """EDO do sistema térmico concentrado de 5 nós."""
     T = X[:4]; tr = X[4]
     pd, pl = potencias(T, f, al)
     p = pd + pl
@@ -81,26 +103,89 @@ def deriv(X, f, al, qext, par=NOM):
 
 
 def escala_orcamento(fc, T, al, p_max):
-    """Maior fator comum s em S_GRID tal que P_total(T, s*fc) <= p_max."""
-    F = np.minimum(F_MAX, np.maximum(F_MIN, fc[None, :] * S_GRID[:, None]))
+    """
+    Procura o maior fator de escala de frequência que atende ao orçamento de potência.
+    Retorno:
+        frequencias, status
+    Status:
+        0 = orçamento atendido sem redução (s = 1.0)
+        1 = orçamento atendido com redução de frequência (s < 1.0)
+        2 = orçamento inviável mesmo na frequência mínima (F_MIN)
+    """
+    fc = np.asarray(fc, dtype=float)
+    T = np.asarray(T, dtype=float)
+    al = np.asarray(al, dtype=float)
+    if fc.shape != (4,) or T.shape != (4,) or al.shape != (4,):
+        raise ValueError("Entradas devem possuir quatro elementos.")
+    if not np.all(np.isfinite(fc)):
+        raise ValueError("Frequências não finitas.")
+    if not np.all(np.isfinite(T)) or not np.all(np.isfinite(al)):
+        raise ValueError("Temperaturas ou atividades não finitas.")
+    if not np.isfinite(p_max) or p_max < 0:
+        raise ValueError("Orçamento de potência inválido.")
+
+    F = np.clip(fc[None, :] * S_GRID[:, None], F_MIN, F_MAX)
     pd, pl = potencias(T, F, al)
     ok = np.nonzero((pd + pl).sum(1) <= p_max)[0]
     if len(ok) == 0:
-        return F[-1], 1
+        return F[-1], 2
     return F[ok[0]], int(ok[0] > 0)
 
 
-def jacobiano(x):
-    F = np.zeros((5, 5))
-    F[:4, :4] = -LAP / C_DIE - np.eye(4) / (R_R * C_DIE)
-    F[:4, 4] = 1.0 / (R_R * C_DIE)
-    F[4, :4] = 1.0 / (C_RAD * R_R)
-    F[4, 4] = -4.0 / (R_R * C_RAD) - 4.0 * EPS * SIGMA * A_RAD * x[4] ** 3 / C_RAD
-    return F
+def jacobiano(x, f=None, al=None, par=NOM):
+    """
+    Jacobiano analítico da planta térmica de cinco estados.
+    Estados:
+        x = [T1, T2, T3, T4, Trad] [K]
+    Entradas:
+        f   = frequências dos dies [GHz] (opcional para derivada de leakage)
+        al  = atividades dos dies [0..1] (opcional para derivada de leakage)
+        par = parâmetros físicos da planta (C, RR, CRAD, LAP)
+    """
+    x = np.asarray(x, dtype=float)
+    if x.shape != (5,):
+        raise ValueError("Dimensões inválidas em jacobiano().")
+    if not np.all(np.isfinite(x)):
+        raise ValueError("Estados térmicos com valores não finitos em jacobiano().")
+
+    C = float(par["C"])
+    RR = float(par["RR"])
+    CRAD = float(par["CRAD"])
+    G = np.asarray(par["LAP"], dtype=float)
+    if C <= 0 or RR <= 0 or CRAD <= 0:
+        raise ValueError("Capacitâncias e resistência devem ser positivas.")
+
+    T = x[:4]
+    Tr = x[4]
+
+    dpl_dT = np.zeros(4, dtype=float)
+    if f is not None and al is not None:
+        f = np.asarray(f, dtype=float)
+        al = np.asarray(al, dtype=float)
+        if f.shape != (4,) or al.shape != (4,):
+            raise ValueError("Dimensões de f e al devem ser (4,).")
+        Tc = np.clip(T, 200.0, 500.0)
+        _, pl = potencias(T, f, al)
+        dentro = (T > 200.0) & (T < 500.0)
+        dpl_dT[dentro] = pl[dentro] * (2.0 / Tc[dentro] + EA / (KB * (Tc[dentro] ** 2)))
+
+    J = np.zeros((5, 5), dtype=float)
+    # Bloco condutivo e capacitivo dos dies
+    J[:4, :4] = (-G - np.eye(4) / RR) / C
+    J[np.arange(4), np.arange(4)] += dpl_dT / C
+
+    # Acoplamento die -> radiador
+    J[:4, 4] = 1.0 / (RR * C)
+
+    # Acoplamento radiador -> dies
+    J[4, :4] = 1.0 / (CRAD * RR)
+
+    # Autoderivada do radiador (condução com os 4 dies + emissão não linear Stefan-Boltzmann)
+    J[4, 4] = -4.0 / (RR * CRAD) - 4.0 * EPS * SIGMA * A_RAD * (Tr ** 3) / CRAD
+    return J
 
 
-# ------------------------------------------------------------------ governadores baseline
-# Cada governador devolve (acao, info); acao(k, y_medido, sc) -> vetor f [GHz].
+# ------------------------------------------------------------------ Governadores Baselines
 def gov_ondemand(trip=None, rel=None):
     s = {"est": np.zeros(4, bool)}
     def acao(k, y, sc):
@@ -133,18 +218,22 @@ def gov_pid(kp, ki, kd, alvo=80.0):
 
 
 def gov_power_cap(p_cap=65.0):
-    info = {"n_atuou": 0}
+    info = {"n_atuou": 0, "n_inviavel": 0}
     def acao(k, y, sc):
-        f, a = escala_orcamento(sc["fn"][k], y[:4], sc["al"][k], p_cap)
-        info["n_atuou"] += a
+        f, status = escala_orcamento(sc["fn"][k], y[:4], sc["al"][k], p_cap)
+        if status == 1:
+            info["n_atuou"] += 1
+        elif status == 2:
+            info["n_inviavel"] += 1
+            info["n_atuou"] += 1
         return f
     return acao, info
 
 
 def gov_tca(lam=0.35, t_seg=83.0, t_ref=75.0, np_h=NP_H, usa_lap=True, usa_barreira=True, sigma_s=0.25):
-    """TCA-DVFS simples (versao anterior): EKF + lei laplaciana + orcamento + barreira. Sem SDP nem MPC."""
+    """TCA-DVFS de referência com EKF, orquestração laplaciana e barreira térmica."""
     s = {"xh": None, "P": np.diag([1.0, 1.0, 1.0, 1.0, 2.0]), "f": None}
-    info = {"n": 0, "n_barreira": 0, "n_orcamento": 0}
+    info = {"n": 0, "n_barreira": 0, "n_orcamento": 0, "n_inviavel": 0}
     Q = np.diag([0.02, 0.02, 0.02, 0.02, 0.05]); R = sigma_s ** 2 * np.eye(5); I5 = np.eye(5)
 
     def acao(k, y, sc):
@@ -154,7 +243,7 @@ def gov_tca(lam=0.35, t_seg=83.0, t_ref=75.0, np_h=NP_H, usa_lap=True, usa_barre
         else:
             xh = s["xh"]
             d = deriv(xh, s["f"], sc["al"][k - 1], sc["qext"][k - 1])[0]
-            dF = dt * jacobiano(xh); Phi = I5 + dF + 0.5 * dF @ dF
+            dF = dt * jacobiano(xh, s["f"], sc["al"][k - 1]); Phi = I5 + dF + 0.5 * dF @ dF
             Pp = Phi @ s["P"] @ Phi.T + Q * dt
             xp = xh + dt * d
             K = Pp @ np.linalg.inv(Pp + R); IK = I5 - K
@@ -166,8 +255,11 @@ def gov_tca(lam=0.35, t_seg=83.0, t_ref=75.0, np_h=NP_H, usa_lap=True, usa_barre
         k_end = min(sc["nt"], k + np_h)
         q_med = (sc["cs"][k_end] - sc["cs"][k]) / max(1, k_end - k)
         p_bud = max(15.0, EPS * SIGMA * A_RAD * ((t_seg + 273.15) ** 4 - T_SPACE ** 4) - q_med)
-        f, atuou = escala_orcamento(f, xh[:4], sc["al"][k], p_bud)
-        info["n_orcamento"] += atuou
+        f, status = escala_orcamento(f, xh[:4], sc["al"][k], p_bud)
+        if status >= 1:
+            info["n_orcamento"] += 1
+        if status == 2:
+            info["n_inviavel"] += 1
         if usa_barreira:
             m = T >= t_seg
             if m.any():
@@ -181,7 +273,7 @@ def gov_tca(lam=0.35, t_seg=83.0, t_ref=75.0, np_h=NP_H, usa_lap=True, usa_barre
 
 
 def autotune_pid(sc, alvo=80.0, n_tune=1200):
-    """Grade 3x3x3, criterio ITAE + penalidade de violacao, nos primeiros n_tune passos."""
+    """Grade 3x3x3 sob critério ITAE + penalidade de violação."""
     dt = sc["dt"]; melhor = (np.inf, None)
     for kp in (-0.025, -0.045, -0.070):
         for ki in (-0.0005, -0.0020, -0.0050):
@@ -198,10 +290,12 @@ def autotune_pid(sc, alvo=80.0, n_tune=1200):
     return melhor[1]
 
 
-# ------------------------------------------------------------------ simulacao e metricas
+# ------------------------------------------------------------------ Simulação e Métricas
 def simular(sc, gov, seed=0, sigma_s=0.25, par=NOM, max_steps=None, t_migr=2.0, fator_migr=0.1):
-    """Heun (RK2). Ruido gaussiano branco de sensor, igual para todos os governadores na mesma semente.
-    Se info['perm'] mudar, o die movido fica t_migr s com atividade fator_migr e vazao nula (premissa)."""
+    """
+    Integração por Heun (RK2) com potência média trapezoidal consistente (2ª ordem).
+    Ruído gaussiano branco de sensor em todos os governadores.
+    """
     rng = np.random.default_rng(seed); nt = sc["nt"]; dt = sc["dt"]
     ns = nt - 1 if max_steps is None else min(nt - 1, max_steps)
     ruido = sigma_s * rng.standard_normal((nt - 1, 5)); acao, info = gov
@@ -216,9 +310,12 @@ def simular(sc, gov, seed=0, sigma_s=0.25, par=NOM, max_steps=None, t_migr=2.0, 
         act = stall > 0; stall = np.maximum(stall - 1, 0); fac = np.where(act, fator_migr, 1.0)
         al = sc["al"][k][perm] * fac; al2 = sc["al"][k + 1][perm] * fac
         Th[k] = X; Fh[k] = f
-        d1, p, pl = deriv(X, f, al, sc["qext"][k], par)
-        d2 = deriv(X + dt * d1, f, al2, sc["qext"][k + 1], par)[0]
-        Pn[k] = p; Pl[k] = pl.sum(); fps[k] = float((f / F_MAX * FPS_NOM[perm] * (~act)).sum())
+        d1, p1, pl1 = deriv(X, f, al, sc["qext"][k], par)
+        d2, p2, pl2 = deriv(X + dt * d1, f, al2, sc["qext"][k + 1], par)
+        # Potência média integrada das duas etapas de Heun
+        Pn[k] = 0.5 * (p1 + p2)
+        Pl[k] = 0.5 * (pl1.sum() + pl2.sum())
+        fps[k] = float((f / F_MAX * FPS_NOM[perm] * (~act)).sum())
         X = X + 0.5 * dt * (d1 + d2)
     info["n_migr"] = nmov
     return {"T": Th[:, :4] - 273.15, "Trad": Th[:, 4] - 273.15, "f": Fh, "Pn": Pn, "Pl": Pl, "fps": fps, "info": info}
@@ -243,7 +340,7 @@ def metricas(r, sc, arred=True):
     return {kk: (round(vv, 3) if isinstance(vv, float) else vv) for kk, vv in m.items()}
 
 
-# ------------------------------------------------------------------ confiabilidade (indicativa)
+# ------------------------------------------------------------------ Confiabilidade Físico-Mecânica
 def zigzag(x, th):
     pts = [x[0]]; direcao = 0; ult = x[0]
     for v in x[1:]:
@@ -262,7 +359,12 @@ def zigzag(x, th):
 
 
 def rainflow(x, th=0.25):
-    """Contagem de ciclos (ASTM E1049, 3 pontos). Retorna [(amplitude [K], peso)]."""
+    """
+    Contagem de ciclos térmicos (ASTM E1049-85, método de 3 pontos).
+    Retorna lista de tuplas: [(delta_T [K], peso_ciclos)]
+    onde delta_T é a excursão térmica completa (range = pico - vale).
+    A semi-amplitude convencional é delta_T / 2.
+    """
     rv = zigzag(list(x), th); pilha = []; ciclos = []
     for p in rv:
         pilha.append(p)
@@ -280,13 +382,16 @@ def rainflow(x, th=0.25):
 
 
 def dano_black(r, jref, dt, n=1.8, ea=0.7):
-    J = r["Pn"] / tensao(r["f"]) / jref                       # corrente ~ P/V, normalizada
+    J = r["Pn"] / tensao(r["f"]) / jref                       # Densidade de corrente proporcional a P/V
     return (J ** n * np.exp(-ea / (KB * (r["T"] + 273.15)))).sum(0) * dt
 
 
 def confiabilidade(rb, rp, sc, skip_h=2.0, limiares=(0.25, 1.0, 2.0)):
-    """Razoes base/prop (>1 favorece o proposto). Black usa o historico completo;
-    rainflow descarta as primeiras skip_h horas (aquecimento). Use skip_h=2 com 3 orbitas."""
+    """
+    Razões base/prop (>1 favorece o proposto).
+    Black avalia dano por eletromigração.
+    Rainflow avalia fadiga termomecânica de solda BGA com expoentes Coffin-Manson q in [1.9, 2.1].
+    """
     dt = sc["dt"]; s0 = int(skip_h * 3600 / dt)
     jref = float((rb["Pn"] / tensao(rb["f"])).mean())
     bb = dano_black(rb, jref, dt); bp = dano_black(rp, jref, dt)
@@ -297,19 +402,21 @@ def confiabilidade(rb, rp, sc, skip_h=2.0, limiares=(0.25, 1.0, 2.0)):
         for nome, r in (("b", rb), ("p", rp)):
             T = r["T"][s0:]
             cic = [rainflow(T[:, i], th) for i in range(4)]
-            d[nome] = {"q21": [sum(n * a ** 2.1 for a, n in c) for c in cic],
-                       "q19": [sum(n * a ** 1.9 for a, n in c) for c in cic],
-                       "amp": max(a for c in cic for a, n in c), "n": sum(len(c) for c in cic)}
+            d[nome] = {"q21": [sum(n * (dT ** 2.1) for dT, n in c) for c in cic],
+                       "q19": [sum(n * (dT ** 1.9) for dT, n in c) for c in cic],
+                       "delta_T_max": max((dT for c in cic for dT, n in c), default=0.0),
+                       "n": sum(len(c) for c in cic)}
         out["CM"]["%.2f" % th] = {
             "q21_pior_no": round(max(d["b"]["q21"]) / max(max(d["p"]["q21"]), 1e-12), 2),
             "q21_soma": round(sum(d["b"]["q21"]) / max(sum(d["p"]["q21"]), 1e-12), 2),
             "q19_soma": round(sum(d["b"]["q19"]) / max(sum(d["p"]["q19"]), 1e-12), 2),
-            "amp_base": round(d["b"]["amp"], 2), "amp_prop": round(d["p"]["amp"], 2),
+            "delta_T_max_base": round(d["b"]["delta_T_max"], 2),
+            "delta_T_max_prop": round(d["p"]["delta_T_max"], 2),
             "n_base": d["b"]["n"], "n_prop": d["p"]["n"]}
     return out
 
 
-if __name__ == "__main__":                 # verificacoes estruturais rapidas
+if __name__ == "__main__":
     sc = cenario()
     assert sc["nt"] == 34009, sc["nt"]
     assert np.allclose(LAP.sum(1), 0.0)

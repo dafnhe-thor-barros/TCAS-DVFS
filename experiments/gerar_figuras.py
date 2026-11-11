@@ -93,12 +93,16 @@ def gerar_todas_figuras(pasta_saida, pasta_artigo_figuras, n_orb=3, semente=0):
     ax[0].axhline(85, color="k", ls="--", lw=0.8)
     ax[0].text(t[-1] * 0.70, 87.5, r"Critical Limit ($85^\circ$C)", fontsize=7.5, color="k")
     ax[0].set_ylim(20, 140)
-    ax[0].set_ylabel(r"$T_{\max}$ ($^\circ$C) [truncated at 140$^\circ$C]")
-    ax[1].set_ylabel("Aggregate Throughput (FPS, 120-s MA)")
-    ax[1].set_xlabel("Time (min)")
+    ax[0].set_ylabel(r"Maximum Temperature $T_{\max}$ ($^\circ$C)", fontsize=8.5)
+    ax[0].annotate(r"Ondemand $> 140^\circ$C", xy=(26, 138), xytext=(36, 122),
+                   arrowprops=dict(arrowstyle="->", lw=0.8, color="#1f77b4"),
+                   fontsize=7.5, color="#1f77b4", fontweight="medium")
+    ax[1].set_ylabel("Throughput (FPS, 120-s MA)", fontsize=8.5)
+    ax[1].set_xlabel("Time (min)", fontsize=9)
     ax[0].legend(fontsize=7, ncol=2)
     for a in ax:
         a.grid(alpha=0.3)
+    fig.tight_layout(h_pad=1.2)
     p_trans = os.path.join(pasta_saida, "fig_transiente.png")
     fig.savefig(p_trans, dpi=200, bbox_inches="tight")
     plt.close(fig)

@@ -38,27 +38,56 @@ def ic(x, rng, B=4000):
 
 
 def rank(v):
-    o = np.argsort(v); r = np.empty(len(v)); r[o] = np.arange(len(v)); return r
+    """Atribui postos médios (average ranks) tratando empates canonicamente."""
+    v = np.asarray(v)
+    order = np.argsort(v)
+    r = np.empty_like(order, dtype=float)
+    r[order] = np.arange(len(v), dtype=float)
+    vals, inv, counts = np.unique(v, return_inverse=True, return_counts=True)
+    for i, count in enumerate(counts):
+        if count > 1:
+            mask = (inv == i)
+            r[mask] = r[mask].mean()
+    return r
 
 
 def spearman(a, b):
-    return float(np.corrcoef(rank(a), rank(b))[0, 1])
+    """Coeficiente de correlação de postos de Spearman com tratamento exato de empates."""
+    try:
+        from scipy.stats import spearmanr
+        res = spearmanr(a, b)
+        val = res.correlation if hasattr(res, 'correlation') else res.statistic
+        return float(val) if np.isfinite(val) else 0.0
+    except ImportError:
+        ra, rb = rank(a), rank(b)
+        std_a, std_b = np.std(ra), np.std(rb)
+        if std_a < 1e-12 or std_b < 1e-12:
+            return 0.0
+        return float(np.corrcoef(ra, rb)[0, 1])
 
 
 def clopper_pearson_sup(k, n, conf=0.95):
-    """Limite superior do IC de Clopper-Pearson (bissecao sobre a binomial)."""
+    """
+    Limite superior unilateral (one-sided, 1 - alfa) do IC exato de Clopper-Pearson.
+    Para k=0, retorna p = 1 - (1 - conf)**(1/n).
+    Para k=n, retorna 1.0.
+    """
+    if k >= n:
+        return 1.0
+    if k == 0:
+        return float(1.0 - (1.0 - conf) ** (1.0 / n))
     from math import comb
-    alfa = 1 - conf
+    alfa = 1.0 - conf
     def cdf(p):
-        return sum(comb(n, i) * p ** i * (1 - p) ** (n - i) for i in range(k + 1))
+        return sum(comb(n, i) * (p ** i) * ((1.0 - p) ** (n - i)) for i in range(k + 1))
     lo, hi = 0.0, 1.0
     for _ in range(80):
         mid = 0.5 * (lo + hi)
-        if cdf(mid) > alfa / 2 if k < n else False:
+        if cdf(mid) > alfa:
             lo = mid
         else:
             hi = mid
-    return hi
+    return float(hi)
 
 
 def linha(r, sc):
