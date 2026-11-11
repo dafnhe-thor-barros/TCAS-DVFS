@@ -2,243 +2,528 @@
 """
 pinn_thermal.py - Physics-Informed Neural Network (PINN) para Modelagem Térmica de Satélites.
 
-Módulo de pesquisa independente (Proposta P-08 da Reauditoria):
-Implementa a formulação canônica de PINN (Raissi et al., 2019) aplicada ao sistema
-térmico concentrado de cinco estados (4 dies de silício + radiador espacial).
-
-Arquitetura e Metodologia:
-  - Entradas: tempo t [s], frequências f [GHz], atividades al [0..1] e fluxo externo Q_ext [W] (10 dimensões).
-  - Saídas: temperaturas estimadas T(t) = [T1, T2, T3, T4, Trad] [K] (5 dimensões).
-  - Diferenciação Analítica: cálculo exato de dT/dt via regra da cadeia sobre as camadas de ativação tanh.
-  - Perda Física (L_physics): resíduo das equações diferenciais térmicas do modelo CTM 5x5:
-      R(t) = dT_pred/dt - f_CTM(T_pred, f, al, Qext)
-  - Otimizador Adam: momentos de primeira e segunda ordem com bias correction para convergência estável.
-  - Normalização MinMax / Z-score para condicionamento numérico de gradientes.
+Reconstrução Matemática Completa (Fase 1 — A01 a A05):
+  - Função objetivo composta:
+      L(theta) = w_data * L_data(theta) + w_phys * L_phys(theta) + w_ic * L_IC(theta)
+  - Diferenciação analítica exata de 1ª e 2ª ordem mista:
+      * dT_hat/dt via regra da cadeia direta através das camadas tanh;
+      * Retropropagação completa (backpropagation) de L_phys para TODOS os pesos e biases
+        de todas as camadas, acoplando d(dT_hat/dt)/d(theta) e o Jacobiano analítico
+        da planta térmica df_CTM/dT;
+      * Retropropagação completa de L_IC para todas as camadas ocultas e de saída;
+  - Processamento integral de lotes (sem descarte do último mini-lote incompleto);
+  - Separação estrita entre pontos de supervisão observados (X_data) e pontos de colocação física (X_colocacao);
+  - Rastreamento diagnóstico de perdas, normas de gradientes por parcela, evolução de parâmetros e tempo.
 """
 
+import math
+import time
 import numpy as np
 
-# Parâmetros físicos nominais importados do tcas_core
 try:
     from tcas_core import (NOM, EPS, SIGMA, A_RAD, T_SPACE, F_MIN, F_MAX,
-                           tensao, potencias, deriv)
+                           EA, KB, T0, tensao, potencias, deriv, jacobiano)
 except ImportError:
     from .tcas_core import (NOM, EPS, SIGMA, A_RAD, T_SPACE, F_MIN, F_MAX,
-                            tensao, potencias, deriv)
+                            EA, KB, T0, tensao, potencias, deriv, jacobiano)
+
+
+def gerar_pontos_colocacao_independentes(X_dominio, indices_supervisionados, n_col=600, seed=42):
+    """
+    Gera pontos de colocação física estritamente disjuntos dos pontos usados na supervisão (A04).
+    Além de selecionar índices não observados, perturba continuamente os instantes de tempo
+    para pontos intermediários da malha orbital.
+    """
+    N_total = len(X_dominio)
+    sup_set = set(int(i) for i in indices_supervisionados)
+    candidatos = np.array([i for i in range(N_total - 1) if i not in sup_set], dtype=int)
+    rng = np.random.default_rng(seed)
+    if len(candidatos) >= n_col:
+        escolhidos = np.sort(rng.choice(candidatos, size=n_col, replace=False))
+    else:
+        escolhidos = candidatos
+    # Interpolação em pontos intermediários (t + tau * dt) para garantir disjunção contínua
+    tau = rng.uniform(0.15, 0.85, size=(len(escolhidos), 1))
+    X_col = (1.0 - tau) * X_dominio[escolhidos] + tau * X_dominio[escolhidos + 1]
+    return X_col, escolhidos
 
 
 class PINNThermalSurrogate:
     """
-    Rede Neural Informada pela Física (PINN) treinável para o sistema térmico satelital 5x5.
+    Rede Neural Informada pela Física (PINN) com retropropagação analítica exata
+    do resíduo diferencial CTM 5x5 e da condição inicial em todas as camadas.
     """
-    def __init__(self, n_hidden=32, n_layers=2, lr=1e-3, w_phys=0.5, w_data=10.0, w_ic=20.0,
-                 t_orb_ref=5668.14, par=NOM, seed=42):
+    def __init__(self, n_hidden=32, n_layers=2, lr=2e-3, w_phys=1.0, w_data=1.0, w_ic=5.0,
+                 t_orb_ref=5668.144369, par=NOM, seed=42):
         self.n_inputs = 10            # [t, f1..f4, al1..al4, qext]
         self.n_outputs = 5            # [T1, T2, T3, T4, Trad]
-        self.n_hidden = n_hidden
-        self.n_layers = n_layers
-        self.lr = lr
-        self.w_phys = w_phys
-        self.w_data = w_data
-        self.w_ic = w_ic
-        self.t_orb_ref = t_orb_ref
+        self.n_hidden = int(n_hidden)
+        self.n_layers = int(n_layers)
+        self.lr = float(lr)
+        self.w_phys = float(w_phys)
+        self.w_data = float(w_data)
+        self.w_ic = float(w_ic)
+        self.t_orb_ref = float(t_orb_ref)
         self.par = par
-        
+        self.seed = int(seed)
+
         # Escalas de normalização física
         self.t_scale = float(t_orb_ref)
         self.f_min, self.f_max = float(F_MIN), float(F_MAX)
-        self.q_scale = 50.0           # Fluxo externo nominal em W
-        self.T_mean = 320.0           # Temperatura média em K (~47 °C)
-        self.T_std = 30.0             # Desvio de escala em K
-        
-        # Inicialização He/Xavier
-        rng = np.random.default_rng(seed)
+        self.q_scale = 50.0
+        self.T_mean = 320.0
+        self.T_std = 30.0
+        self.alpha_t = 2.0 / self.t_scale  # dx_n0 / dt
+
+        # Inicialização Xavier/Glorot para ativação tanh
+        rng = np.random.default_rng(self.seed)
         self.weights = []
         self.biases = []
-        
-        dims = [self.n_inputs] + [n_hidden] * n_layers + [self.n_outputs]
+        dims = [self.n_inputs] + [self.n_hidden] * self.n_layers + [self.n_outputs]
         for i in range(len(dims) - 1):
-            w = rng.standard_normal((dims[i], dims[i+1])) * np.sqrt(2.0 / dims[i])
-            b = np.zeros(dims[i+1])
-            self.weights.append(w)
-            self.biases.append(b)
-            
-        # Otimizador Adam
-        self.params = self.weights + self.biases
-        self.m = [np.zeros_like(p) for p in self.params]
-        self.v = [np.zeros_like(p) for p in self.params]
+            lim = math.sqrt(2.0 / (dims[i] + dims[i + 1]))
+            self.weights.append(rng.normal(0.0, lim, size=(dims[i], dims[i + 1])))
+            self.biases.append(np.zeros(dims[i + 1], dtype=float))
+
+        # Cópia inicial para medir evolução dos parâmetros ||theta - theta_0||_2
+        self._init_vec = self.vetor_parametros().copy()
+
+        # Estado do otimizador Adam
+        self.m_w = [np.zeros_like(w) for w in self.weights]
+        self.v_w = [np.zeros_like(w) for w in self.weights]
+        self.m_b = [np.zeros_like(b) for b in self.biases]
+        self.v_b = [np.zeros_like(b) for b in self.biases]
         self.t_step = 0
-        self.history = {"loss_total": [], "loss_data": [], "loss_phys": [], "loss_ic": []}
+
+        self.history = {
+            "loss_total": [],
+            "loss_data": [],
+            "loss_phys": [],
+            "loss_ic": [],
+            "grad_norm_total": [],
+            "grad_norm_data": [],
+            "grad_norm_phys": [],
+            "grad_norm_ic": [],
+            "param_norm": [],
+            "param_delta_norm": [],
+            "epoch_time_s": [],
+            "samples_seen": []
+        }
+
+    def vetor_parametros(self):
+        """Concatena todos os pesos e biases em um vetor 1D."""
+        return np.concatenate([w.ravel() for w in self.weights] + [b.ravel() for b in self.biases])
+
+    @staticmethod
+    def _norma_grad(gW, gb):
+        s = sum(float(np.sum(w * w)) for w in gW) + sum(float(np.sum(b * b)) for b in gb)
+        return math.sqrt(s)
 
     def normalizar_entradas(self, X):
-        """Mapeia entradas físicas para faixa normalizada [-1, 1]."""
-        X_n = np.zeros_like(X)
-        X_n[:, 0] = (X[:, 0] / self.t_scale) * 2.0 - 1.0                # Tempo
-        X_n[:, 1:5] = (X[:, 1:5] - self.f_min) / (self.f_max - self.f_min) * 2.0 - 1.0 # Frequências
-        X_n[:, 5:9] = X[:, 5:9] * 2.0 - 1.0                             # Atividades
-        X_n[:, 9] = (X[:, 9] / self.q_scale) * 2.0 - 1.0               # Qext
+        """Mapeia entradas físicas para [-1, 1]."""
+        X = np.asarray(X, dtype=float)
+        X_n = np.empty_like(X)
+        X_n[:, 0] = (X[:, 0] / self.t_scale) * 2.0 - 1.0
+        X_n[:, 1:5] = (X[:, 1:5] - self.f_min) / (self.f_max - self.f_min) * 2.0 - 1.0
+        X_n[:, 5:9] = X[:, 5:9] * 2.0 - 1.0
+        X_n[:, 9] = (X[:, 9] / self.q_scale) * 2.0 - 1.0
         return X_n
 
-    def forward_norm(self, X_n):
-        """Passo direto com entradas e saídas adimensionais."""
-        acts = [X_n]
-        a = X_n
-        for i in range(len(self.weights) - 1):
-            z = a @ self.weights[i] + self.biases[i]
-            a = np.tanh(z)
-            acts.append(a)
-        # Camada de saída linear
-        y_n = a @ self.weights[-1] + self.biases[-1]
-        acts.append(y_n)
-        return y_n, acts
+    def forward_with_cache(self, X):
+        """
+        Propagação direta e propagação tangente temporal (dT_pred/dt analítico).
+        Retorna T_pred [K], dT_dt [K/s] e cache completo para retropropagação de 1ª e 2ª ordem.
+        """
+        X_n = self.normalizar_entradas(X)
+        N = X_n.shape[0]
+        a_list = [X_n]
+        da_list = [np.zeros_like(X_n)]
+        da_list[0][:, 0] = self.alpha_t
+
+        z_list, dz_list, sp_list, spp_list = [], [], [], []
+        n_hidden_layers = len(self.weights) - 1
+
+        for l in range(n_hidden_layers):
+            z = a_list[l] @ self.weights[l] + self.biases[l]
+            dz = da_list[l] @ self.weights[l]
+            al1 = np.tanh(z)
+            sp = 1.0 - al1 * al1
+            spp = -2.0 * al1 * sp
+            dal1 = sp * dz
+
+            z_list.append(z)
+            dz_list.append(dz)
+            sp_list.append(sp)
+            spp_list.append(spp)
+            a_list.append(al1)
+            da_list.append(dal1)
+
+        y_n = a_list[-1] @ self.weights[-1] + self.biases[-1]
+        dy_n = da_list[-1] @ self.weights[-1]
+
+        T_pred = self.T_mean + self.T_std * y_n
+        dT_dt = self.T_std * dy_n
+
+        cache = {
+            "a": a_list,
+            "da": da_list,
+            "z": z_list,
+            "dz": dz_list,
+            "sp": sp_list,
+            "spp": spp_list,
+            "y_n": y_n,
+            "dy_n": dy_n,
+            "T_pred": T_pred,
+            "dT_dt": dT_dt
+        }
+        return T_pred, dT_dt, cache
 
     def forward(self, X):
-        """Passo direto retornando temperatura física [K]."""
-        X_n = self.normalizar_entradas(X)
-        y_n, _ = self.forward_norm(X_n)
-        return y_n * self.T_std + self.T_mean
+        """Retorna predição de temperatura em Kelvin [K]."""
+        T_pred, _, _ = self.forward_with_cache(X)
+        return T_pred
 
-    def grad_tempo_analitico(self, acts):
+    def _ctm_deriv_jacobiano_batch(self, T_pred, F, AL, QEXT):
         """
-        Calcula a derivada exata dy_norm / dt_norm via regra da cadeia através das ativações tanh.
-        Retorna dT_pred / dt em [K/s].
+        Avalia f_CTM(T, f, al, qext) e o Jacobiano analítico df_CTM/dT em lote,
+        mantendo equivalência exata com tcas_core.deriv e tcas_core.jacobiano.
         """
-        # Entrada: acts[0] tem formato (N, 10). A feature 0 é o tempo normalizado.
-        # d(acts[1])/dt_norm = (1 - acts[1]^2) * W0[0, :]
-        da = (1.0 - acts[1] ** 2) * self.weights[0][0, :]              # (N, n_hidden)
-        for i in range(1, len(self.weights) - 1):
-            da = (1.0 - acts[i+1] ** 2) * (da @ self.weights[i])        # (N, n_hidden)
-        dy_n_dt_n = da @ self.weights[-1]                              # (N, 5)
-        
-        # Conversão de escala dimensional: dT/dt = (T_std / (t_scale / 2)) * dy_n/dt_n
-        scale_dt = self.T_std / (self.t_scale / 2.0)
-        return dy_n_dt_n * scale_dt
+        N = T_pred.shape[0]
+        T = T_pred[:, :4]
+        Tr = T_pred[:, 4]
+        pd, pl = potencias(T, F, AL)
+        p = pd + pl
 
-    def calcular_residuo_fisico(self, X, T_pred, dT_dt):
-        """Calcula o resíduo dimensional da equação diferencial da planta 5x5 [K/s]."""
-        N_pts = len(X)
-        res = np.zeros((N_pts, 5))
-        for k in range(N_pts):
-            d_CTM = deriv(T_pred[k], X[k, 1:5], X[k, 5:9], X[k, 9], self.par)[0]
-            res[k] = dT_dt[k] - d_CTM
-        return res
+        c = float(self.par["C"])
+        rr = float(self.par["RR"])
+        crad = float(self.par["CRAD"])
+        Lp = np.asarray(self.par["LAP"], dtype=float)
 
-    def fit(self, X_data, y_data, X_colocacao=None, epochs=150, batch_size=128, verbose=True):
+        qr = (T - Tr[:, None]) / rr
+        f_ctm = np.empty((N, 5), dtype=float)
+        f_ctm[:, :4] = (p - (T @ Lp.T) - qr) / c
+        f_ctm[:, 4] = (qr.sum(axis=1) + QEXT - EPS * SIGMA * A_RAD * (Tr ** 4 - T_SPACE ** 4)) / crad
+
+        Tc = np.clip(T, 200.0, 500.0)
+        dentro = (T > 200.0) & (T < 500.0)
+        dpl_dT = np.where(dentro, pl * (2.0 / Tc + EA / (KB * (Tc ** 2))), 0.0)
+
+        J = np.zeros((N, 5, 5), dtype=float)
+        J[:, :4, :4] = ((-Lp - np.eye(4) / rr) / c)[None, :, :]
+        idx4 = np.arange(4)
+        J[:, idx4, idx4] += dpl_dT / c
+        J[:, :4, 4] = 1.0 / (rr * c)
+        J[:, 4, :4] = 1.0 / (crad * rr)
+        J[:, 4, 4] = -4.0 / (rr * crad) - 4.0 * EPS * SIGMA * A_RAD * (Tr ** 3) / crad
+        return f_ctm, J
+
+    def calcular_residuo_fisico(self, X_col, T_pred=None, dT_dt=None):
+        """Calcula o resíduo físico R(t) = dT_pred/dt - f_CTM(T_pred, f, al, qext) [K/s]."""
+        if T_pred is None or dT_dt is None:
+            T_pred, dT_dt, _ = self.forward_with_cache(X_col)
+        f_ctm, _ = self._ctm_deriv_jacobiano_batch(T_pred, X_col[:, 1:5], X_col[:, 5:9], X_col[:, 9])
+        return dT_dt - f_ctm
+
+    def _backprop_mse(self, cache, err_K):
         """
-        Treina a PINN usando o otimizador Adam sobre os dados, física e condição inicial.
+        Retropropaga uma perda MSE de temperatura L = mean(err_K^2) através de TODAS as camadas.
+        Usado tanto para L_data quanto para L_IC (garantindo A02).
         """
+        n_layers_total = len(self.weights)
+        gW = [np.zeros_like(w) for w in self.weights]
+        gb = [np.zeros_like(b) for b in self.biases]
+
+        N = err_K.shape[0]
+        bar_yn = (2.0 / (5.0 * N)) * err_K * self.T_std
+
+        gW[-1] = cache["a"][-1].T @ bar_yn
+        gb[-1] = bar_yn.sum(axis=0)
+        bar_a = bar_yn @ self.weights[-1].T
+
+        for l in range(n_layers_total - 2, -1, -1):
+            bar_z = bar_a * cache["sp"][l]
+            gW[l] = cache["a"][l].T @ bar_z
+            gb[l] = bar_z.sum(axis=0)
+            if l > 0:
+                bar_a = bar_z @ self.weights[l].T
+
+        return gW, gb
+
+    def _backprop_physics(self, X_col, cache):
+        """
+        Retropropaga a perda física L_phys = mean((dT_dt - f_CTM)^2) para TODOS os pesos e biases
+        de todas as camadas da rede (garantindo A01).
+        """
+        n_layers_total = len(self.weights)
+        gW = [np.zeros_like(w) for w in self.weights]
+        gb = [np.zeros_like(b) for b in self.biases]
+
+        T_pred = cache["T_pred"]
+        dT_dt = cache["dT_dt"]
+        N_c = T_pred.shape[0]
+
+        f_ctm, J_all = self._ctm_deriv_jacobiano_batch(T_pred, X_col[:, 1:5], X_col[:, 5:9], X_col[:, 9])
+        R = dT_dt - f_ctm
+        loss_phys = float(np.mean(R * R))
+
+        G_R = (2.0 / (5.0 * N_c)) * R
+        bar_dyn = self.T_std * G_R
+        bar_yn = -self.T_std * np.einsum('ki,kij->kj', G_R, J_all)
+
+        # Camada de saída
+        gW[-1] = cache["a"][-1].T @ bar_yn + cache["da"][-1].T @ bar_dyn
+        gb[-1] = bar_yn.sum(axis=0)
+        bar_a = bar_yn @ self.weights[-1].T
+        bar_da = bar_dyn @ self.weights[-1].T
+
+        # Camadas ocultas (derivadas de 1ª e 2ª ordem da ativação tanh)
+        for l in range(n_layers_total - 2, -1, -1):
+            sp = cache["sp"][l]
+            spp = cache["spp"][l]
+            dz = cache["dz"][l]
+
+            bar_dz = bar_da * sp
+            bar_z = bar_a * sp + bar_da * dz * spp
+
+            gW[l] = cache["a"][l].T @ bar_z + cache["da"][l].T @ bar_dz
+            gb[l] = bar_z.sum(axis=0)
+            if l > 0:
+                bar_a = bar_z @ self.weights[l].T
+                bar_da = bar_dz @ self.weights[l].T
+
+        return loss_phys, gW, gb
+
+    def calcular_perdas_e_gradientes(self, X_data, y_data, X_colocacao, X_ic=None, y_ic=None):
+        """
+        Calcula L_data, L_phys, L_ic, L_total e os gradientes analíticos exatos de cada parcela
+        em todas as camadas.
+        """
+        n_layers_total = len(self.weights)
+
+        # 1. Parcela de Dados Supervisionados (L_data)
+        T_d, _, cache_d = self.forward_with_cache(X_data)
+        err_d = T_d - y_data
+        loss_data = float(np.mean(err_d * err_d))
+        gW_d, gb_d = self._backprop_mse(cache_d, err_d)
+
+        # 2. Parcela de Condição Inicial (L_IC) com backpropagation completo até a camada 0
+        if X_ic is None or y_ic is None:
+            X_ic = X_data[:1]
+            y_ic = y_data[:1]
+        T_ic, _, cache_ic = self.forward_with_cache(X_ic)
+        err_ic = T_ic - y_ic
+        loss_ic = float(np.mean(err_ic * err_ic))
+        gW_ic, gb_ic = self._backprop_mse(cache_ic, err_ic)
+
+        # 3. Parcela Física (L_phys) nos pontos de colocação
+        _, _, cache_col = self.forward_with_cache(X_colocacao)
+        loss_phys, gW_p, gb_p = self._backprop_physics(X_colocacao, cache_col)
+
+        # 4. Combinação ponderada L_total = w_data * L_data + w_phys * L_phys + w_ic * L_ic
+        loss_total = self.w_data * loss_data + self.w_phys * loss_phys + self.w_ic * loss_ic
+        gW_tot = [
+            self.w_data * gW_d[l] + self.w_phys * gW_p[l] + self.w_ic * gW_ic[l]
+            for l in range(n_layers_total)
+        ]
+        gb_tot = [
+            self.w_data * gb_d[l] + self.w_phys * gb_p[l] + self.w_ic * gb_ic[l]
+            for l in range(n_layers_total)
+        ]
+
+        return {
+            "loss_total": loss_total,
+            "loss_data": loss_data,
+            "loss_phys": loss_phys,
+            "loss_ic": loss_ic,
+            "grads_total": (gW_tot, gb_tot),
+            "grads_data": (gW_d, gb_d),
+            "grads_phys": (gW_p, gb_p),
+            "grads_ic": (gW_ic, gb_ic),
+            "grad_norm_total": self._norma_grad(gW_tot, gb_tot),
+            "grad_norm_data": self._norma_grad(gW_d, gb_d),
+            "grad_norm_phys": self._norma_grad(gW_p, gb_p),
+            "grad_norm_ic": self._norma_grad(gW_ic, gb_ic)
+        }
+
+    def funcao_perda(self, X_colocacao, X_dados, y_dados, X_ic=None, y_ic=None):
+        """Avalia apenas os escalares de perda (útil para verificação por diferenças finitas)."""
+        T_d, _, _ = self.forward_with_cache(X_dados)
+        loss_data = float(np.mean((T_d - y_dados) ** 2))
+
+        if X_ic is None or y_ic is None:
+            X_ic = X_dados[:1]
+            y_ic = y_dados[:1]
+        T_ic, _, _ = self.forward_with_cache(X_ic)
+        loss_ic = float(np.mean((T_ic - y_ic) ** 2))
+
+        T_col, dT_dt_col, _ = self.forward_with_cache(X_colocacao)
+        res_phys = self.calcular_residuo_fisico(X_colocacao, T_col, dT_dt_col)
+        loss_phys = float(np.mean(res_phys ** 2))
+
+        loss_total = self.w_data * loss_data + self.w_phys * loss_phys + self.w_ic * loss_ic
+        return {
+            "loss_total": loss_total,
+            "loss_physics": loss_phys,
+            "loss_data": loss_data,
+            "loss_ic": loss_ic
+        }
+
+    def _step_adam(self, gW, gb, grad_clip=50.0):
+        """Atualiza todos os pesos e biases usando Adam com clipping defensivo de norma."""
+        norma = self._norma_grad(gW, gb)
+        if norma > grad_clip:
+             escala = grad_clip / norma
+             gW = [w * escala for w in gW]
+             gb = [b * escala for b in gb]
+
+        self.t_step += 1
+        beta1, beta2, eps = 0.9, 0.999, 1e-8
+        bc1 = 1.0 - beta1 ** self.t_step
+        bc2 = 1.0 - beta2 ** self.t_step
+
+        for l in range(len(self.weights)):
+            self.m_w[l] = beta1 * self.m_w[l] + (1.0 - beta1) * gW[l]
+            self.v_w[l] = beta2 * self.v_w[l] + (1.0 - beta2) * (gW[l] * gW[l])
+            mw_hat = self.m_w[l] / bc1
+            vw_hat = self.v_w[l] / bc2
+            self.weights[l] -= self.lr * mw_hat / (np.sqrt(vw_hat) + eps)
+
+            self.m_b[l] = beta1 * self.m_b[l] + (1.0 - beta1) * gb[l]
+            self.v_b[l] = beta2 * self.v_b[l] + (1.0 - beta2) * (gb[l] * gb[l])
+            mb_hat = self.m_b[l] / bc1
+            vb_hat = self.v_b[l] / bc2
+            self.biases[l] -= self.lr * mb_hat / (np.sqrt(vb_hat) + eps)
+
+    def fit(self, X_data, y_data, X_colocacao=None, X_ic=None, y_ic=None,
+            epochs=150, batch_size=128, col_batch_size=256, verbose=True):
+        """
+        Treina a PINN garantindo:
+          - Retropropagação de L_data, L_phys e L_IC em todas as camadas (A01, A02);
+          - Processamento de 100% das amostras a cada época sem descartar o último lote (A03);
+          - Pontos de colocação independentes dos dados observados (A04).
+        """
+        X_data = np.asarray(X_data, dtype=float)
+        y_data = np.asarray(y_data, dtype=float)
         N_data = len(X_data)
-        X_data_n = self.normalizar_entradas(X_data)
-        y_data_n = (y_data - self.T_mean) / self.T_std
-        
+
+        if X_ic is None or y_ic is None:
+            X_ic = X_data[:1].copy()
+            y_ic = y_data[:1].copy()
+
         if X_colocacao is None:
-            # Amostra pontos de colocação no domínio orbital
-            idx_col = np.linspace(0, N_data - 1, min(500, N_data), dtype=int)
-            X_col = X_data[idx_col]
+            # Gera pontos de colocação em instantes intermediários disjuntos de X_data
+            rng_col = np.random.default_rng(self.seed + 100)
+            tau = rng_col.uniform(0.2, 0.8, size=(max(1, N_data - 1), 1))
+            X_colocacao = (1.0 - tau) * X_data[:-1] + tau * X_data[1:]
         else:
-            X_col = X_colocacao
-            
-        rng = np.random.default_rng(42)
-        n_batches = max(1, N_data // batch_size)
-        
+            X_colocacao = np.asarray(X_colocacao, dtype=float)
+
+        N_col = len(X_colocacao)
+        rng = np.random.default_rng(self.seed)
+        t_start_total = time.perf_counter()
+
         for ep in range(epochs):
-            perm = rng.permutation(N_data)
-            ep_loss_data = 0.0
-            ep_loss_phys = 0.0
+            t_ep0 = time.perf_counter()
+            perm_d = rng.permutation(N_data)
+            perm_c = rng.permutation(N_col)
+
+            # Lotes completos incluindo o último lote residual (A03)
+            starts_d = list(range(0, N_data, batch_size))
+            n_batches = len(starts_d)
+
+            ep_loss_tot = 0.0
+            ep_loss_d = 0.0
+            ep_loss_p = 0.0
             ep_loss_ic = 0.0
-            
-            for b in range(n_batches):
-                idx = perm[b * batch_size:(b + 1) * batch_size]
-                xb_n = X_data_n[idx]
-                yb_n = y_data_n[idx]
-                
-                # Forward pass
-                pred_b_n, acts = self.forward_norm(xb_n)
-                err_data = pred_b_n - yb_n
-                loss_data = np.mean(err_data ** 2)
-                
-                # Backprop gradientes de dados
-                grads_w = [np.zeros_like(w) for w in self.weights]
-                grads_b = [np.zeros_like(b) for b in self.biases]
-                
-                # Gradiente saída linear
-                delta = 2.0 * err_data / len(idx)                      # (B, 5)
-                grads_w[-1] = acts[-2].T @ delta
-                grads_b[-1] = delta.sum(axis=0)
-                
-                # Retropropagação camadas ocultas
-                for layer_idx in range(len(self.weights) - 2, -1, -1):
-                    delta = (delta @ self.weights[layer_idx + 1].T) * (1.0 - acts[layer_idx + 1] ** 2)
-                    grads_w[layer_idx] = acts[layer_idx].T @ delta
-                    grads_b[layer_idx] = delta.sum(axis=0)
-                    
-                # Condição Inicial (t=0)
-                x0_n = X_data_n[:1]
-                y0_n = y_data_n[:1]
-                pred0_n, acts0 = self.forward_norm(x0_n)
-                err_ic = pred0_n - y0_n
-                loss_ic = np.mean(err_ic ** 2)
-                
-                delta_ic = 2.0 * err_ic
-                grads_w[-1] += self.w_ic * (acts0[-2].T @ delta_ic)
-                grads_b[-1] += self.w_ic * delta_ic.sum(axis=0)
-                
-                # Atualização Adam
-                grads = [self.w_data * gw for gw in grads_w] + [self.w_data * gb for gb in grads_b]
-                self.t_step += 1
-                beta1, beta2, eps = 0.9, 0.999, 1e-8
-                for p_idx in range(len(self.params)):
-                    self.m[p_idx] = beta1 * self.m[p_idx] + (1 - beta1) * grads[p_idx]
-                    self.v[p_idx] = beta2 * self.v[p_idx] + (1 - beta2) * (grads[p_idx] ** 2)
-                    m_hat = self.m[p_idx] / (1.0 - beta1 ** self.t_step)
-                    v_hat = self.v[p_idx] / (1.0 - beta2 ** self.t_step)
-                    self.params[p_idx] -= self.lr * m_hat / (np.sqrt(v_hat) + eps)
-                    
-                ep_loss_data += float(loss_data)
-                ep_loss_ic += float(loss_ic)
-                
-            # Avaliação física periódica sobre os pontos de colocação
-            X_col_n = self.normalizar_entradas(X_col)
-            pred_col_n, acts_col = self.forward_norm(X_col_n)
-            T_col = pred_col_n * self.T_std + self.T_mean
-            dT_dt_col = self.grad_tempo_analitico(acts_col)
-            res_phys = self.calcular_residuo_fisico(X_col, T_col, dT_dt_col)
-            loss_phys = float(np.mean(res_phys ** 2))
-            
-            loss_tot = (ep_loss_data / n_batches) * self.w_data + (ep_loss_ic / n_batches) * self.w_ic + loss_phys * self.w_phys
-            self.history["loss_total"].append(loss_tot)
-            self.history["loss_data"].append(ep_loss_data / n_batches)
-            self.history["loss_phys"].append(loss_phys)
-            self.history["loss_ic"].append(ep_loss_ic / n_batches)
-            
+            ep_gn_tot = 0.0
+            ep_gn_d = 0.0
+            ep_gn_p = 0.0
+            ep_gn_ic = 0.0
+            samples_seen_ep = 0
+
+            for b_idx, start_d in enumerate(starts_d):
+                end_d = min(start_d + batch_size, N_data)
+                idx_d = perm_d[start_d:end_d]
+                samples_seen_ep += len(idx_d)
+
+                # Seleciona mini-lote de colocação física independente
+                start_c = (b_idx * col_batch_size) % N_col
+                end_c = min(start_c + col_batch_size, N_col)
+                idx_c = perm_c[start_c:end_c]
+                if len(idx_c) < min(col_batch_size, N_col):
+                    faltam = min(col_batch_size, N_col) - len(idx_c)
+                    idx_c = np.concatenate([idx_c, perm_c[:faltam]])
+
+                info_step = self.calcular_perdas_e_gradientes(
+                    X_data[idx_d], y_data[idx_d], X_colocacao[idx_c], X_ic, y_ic
+                )
+                gW_tot, gb_tot = info_step["grads_total"]
+                self._step_adam(gW_tot, gb_tot)
+
+                peso_lote = len(idx_d) / float(N_data)
+                ep_loss_tot += info_step["loss_total"] * peso_lote
+                ep_loss_d += info_step["loss_data"] * peso_lote
+                ep_loss_p += info_step["loss_phys"] * peso_lote
+                ep_loss_ic += info_step["loss_ic"] * peso_lote
+                ep_gn_tot += info_step["grad_norm_total"] / n_batches
+                ep_gn_d += info_step["grad_norm_data"] / n_batches
+                ep_gn_p += info_step["grad_norm_phys"] / n_batches
+                ep_gn_ic += info_step["grad_norm_ic"] / n_batches
+
+            assert samples_seen_ep == N_data, f"Erro A03: processou {samples_seen_ep} != {N_data}"
+
+            cur_vec = self.vetor_parametros()
+            p_norm = float(np.linalg.norm(cur_vec))
+            p_delta = float(np.linalg.norm(cur_vec - self._init_vec))
+            ep_time = time.perf_counter() - t_ep0
+
+            self.history["loss_total"].append(float(ep_loss_tot))
+            self.history["loss_data"].append(float(ep_loss_d))
+            self.history["loss_phys"].append(float(ep_loss_p))
+            self.history["loss_ic"].append(float(ep_loss_ic))
+            self.history["grad_norm_total"].append(float(ep_gn_tot))
+            self.history["grad_norm_data"].append(float(ep_gn_d))
+            self.history["grad_norm_phys"].append(float(ep_gn_p))
+            self.history["grad_norm_ic"].append(float(ep_gn_ic))
+            self.history["param_norm"].append(p_norm)
+            self.history["param_delta_norm"].append(p_delta)
+            self.history["epoch_time_s"].append(float(ep_time))
+            self.history["samples_seen"].append(int(samples_seen_ep))
+
             if verbose and ((ep + 1) % 25 == 0 or ep == 0):
-                print(f"  PINN Época {ep+1:3d}/{epochs:3d} | Perda Total: {loss_tot:.4e} | Dados MSE: {ep_loss_data/n_batches:.4e} | Resíduo Físico MSE: {loss_phys:.4e}")
-                
+                print(
+                    f"  Época {ep+1:3d}/{epochs:3d} | L_tot: {ep_loss_tot:.4e} "
+                    f"| L_data: {ep_loss_d:.4e} | L_phys: {ep_loss_p:.4e} | L_ic: {ep_loss_ic:.4e} "
+                    f"| ||g_p||: {ep_gn_p:.3e} | ||g_ic||: {ep_gn_ic:.3e}"
+                )
+
+        self.total_train_time_s = time.perf_counter() - t_start_total
         return self.history
 
     def predict(self, X):
-        """Predição em formato físico de temperatura [K]."""
+        """Predição em Kelvin [K]."""
         return self.forward(X)
 
     def avaliar(self, X_test, y_test):
-        """Avaliação out-of-sample com métricas de engenharia e físicas."""
-        T_pred = self.predict(X_test)
-        rmse = float(np.sqrt(np.mean((T_pred - y_test) ** 2)))
-        mae = float(np.mean(np.abs(T_pred - y_test)))
-        max_err = float(np.max(np.abs(T_pred - y_test)))
-        
-        # Resíduo físico no conjunto de teste
-        X_test_n = self.normalizar_entradas(X_test)
-        _, acts = self.forward_norm(X_test_n)
-        dT_dt = self.grad_tempo_analitico(acts)
+        """Avalia métricas térmicas e resíduo diferencial físico no conjunto de teste."""
+        T_pred, dT_dt, _ = self.forward_with_cache(X_test)
+        err = T_pred - y_test
+        rmse = float(np.sqrt(np.mean(err * err)))
+        mae = float(np.mean(np.abs(err)))
+        max_err = float(np.max(np.abs(err)))
+
         res = self.calcular_residuo_fisico(X_test, T_pred, dT_dt)
+        res_phys_mse = float(np.mean(res * res))
+        res_phys_rms = float(np.sqrt(res_phys_mse))
         res_phys_mean = float(np.mean(np.abs(res)))
         res_phys_max = float(np.max(np.abs(res)))
-        
+
         return {
             "rmse_K": rmse,
             "mae_K": mae,
             "max_err_K": max_err,
+            "res_phys_mse_K2_s2": res_phys_mse,
+            "res_phys_rms_K_s": res_phys_rms,
             "res_phys_mean_K_s": res_phys_mean,
             "res_phys_max_K_s": res_phys_max
         }

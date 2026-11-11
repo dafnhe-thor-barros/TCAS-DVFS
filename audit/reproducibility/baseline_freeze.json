@@ -1,0 +1,19 @@
+{
+  "phase": "Fase 0 - Congelamento e Rastreabilidade",
+  "baseline_commit_audited": "a8027ee943659c61a09f3abb7043e22b89e74941",
+  "head_before_mandatory_plan": "2f0e1523930f9d638fa341f9312710099bcce470",
+  "git_tag": "audit-baseline-a8027ee",
+  "historical_archive_dir": "audit/reproducibility/historical_a8027ee",
+  "archived_files": [
+    "ablacao.csv",
+    "amostras.csv",
+    "convergencia_temporal.csv",
+    "convergencia_temporal.json",
+    "fig_validacao_pinn.png",
+    "incerteza.json",
+    "metadata.json",
+    "resultados.json",
+    "tabela1.csv",
+    "tabela_sementes.csv"
+  ]
+}
