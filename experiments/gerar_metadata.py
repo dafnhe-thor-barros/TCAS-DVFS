@@ -65,7 +65,7 @@ def coletar_metadados(pasta_raiz):
             "lhs_perturbation_pct": 20.0
         },
         "execution_commands": {
-            "primary_campaign": "python experiments/run_experimentos.py --orbitas 3 --orbitas-ablacao 3 --sementes 10 --saida results",
+            "primary_campaign": "python experiments/run_experimentos.py --orbitas 3 --orbitas-ablacao 1 --sementes 10 --saida results",
             "uncertainty_campaign": "python experiments/run_incerteza.py --amostras 30 --orbitas 3 --saida results",
             "rainflow_validation": "python experiments/validacao_rainflow.py",
             "temporal_convergence": "python experiments/run_convergencia_temporal.py"
@@ -73,7 +73,7 @@ def coletar_metadados(pasta_raiz):
         "data_manifest": {
             "results/tabela1.csv": "Desempenho consolidado das 8 políticas de controle em 3 órbitas (semente 0)",
             "results/tabela_sementes.csv": "Estatísticas de dispersão entre 10 sementes estocásticas de ruído de sensor",
-            "results/ablacao.csv": "Estudo de ablação funcional arquitetural (3 órbitas, semente 0)",
+            "results/ablacao.csv": "Estudo de ablação funcional arquitetural (1 órbita, semente 0)",
             "results/amostras.csv": "Matriz de 30 amostras de amostragem por hipercubo latino (LHS, +-20%)",
             "results/convergencia_temporal.csv": "Avaliação do erro numérico com dt in [1.0, 0.5, 0.25, 0.125] s",
             "results/metadata.json": "Metadados de reprodutibilidade e ambiente computacional"

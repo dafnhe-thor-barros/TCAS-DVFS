@@ -61,18 +61,19 @@ def cenario(n_orb=3, dt=DT):
     md = fsol / 2
     fase = np.mod(t, t_orb) / t_orb
     ill = 1 / (1 + np.exp(np.clip((fase - fsol) * 120, -700, 700)))
-    cs = np.maximum(0.0, np.cos((math.pi / 2) * (fase - md) / md) * math.cos(math.radians(30)) * math.cos(math.radians(15)))
+    cos_sun = np.maximum(0.0, np.cos((math.pi / 2) * (fase - md) / md) * math.cos(math.radians(30)) * math.cos(math.radians(15)))
     te = 255.0 - 15.0 * np.sin(math.pi * (fase - md) / fsol) ** 2
-    qext = ill * S_SOLAR * ALPHA_S * A_RAD * cs * (1 + A_E * F_VIEW) + SIGMA * te ** 4 * EPS * A_RAD * F_VIEW
+    qext = ill * S_SOLAR * ALPHA_S * A_RAD * cos_sun * (1 + A_E * F_VIEW) + SIGMA * te ** 4 * EPS * A_RAD * F_VIEW
     al = np.zeros((nt, 4)); fn = np.zeros((nt, 4))
     al[:, 0] = 0.85 + 0.10 * np.sin(2 * np.pi * t / 1200); fn[:, 0] = 1.15
     al[:, 1] = 0.70 + 0.20 * np.minimum(1.0, t / (t[-1] * 0.7)); fn[:, 1] = 1.05
     alto = np.mod(t, 1800) > 900
     al[:, 2] = np.where(alto, 0.95, 0.60); fn[:, 2] = np.where(alto, 1.30, 0.80)
     al[:, 3] = 0.75; fn[:, 3] = 1.00
+    qext_cumsum = np.concatenate([[0.0], np.cumsum(qext)])
     return {"dt": dt, "nt": nt, "t": t, "t_orb": t_orb, "qext": qext, "al": al, "fn": fn,
             "x0": np.array([310.0, 310.0, 310.0, 310.0, 270.0]),
-            "cs": np.concatenate([[0.0], np.cumsum(qext)])}
+            "cs": qext_cumsum, "qext_cumsum": qext_cumsum}
 
 
 # ------------------------------------------------------------------ Planta Térmica (5x5 CTM)
@@ -412,6 +413,8 @@ def confiabilidade(rb, rp, sc, skip_h=2.0, limiares=(0.25, 1.0, 2.0)):
             "q19_soma": round(sum(d["b"]["q19"]) / max(sum(d["p"]["q19"]), 1e-12), 2),
             "delta_T_max_base": round(d["b"]["delta_T_max"], 2),
             "delta_T_max_prop": round(d["p"]["delta_T_max"], 2),
+            "amp_max_base": round(d["b"]["delta_T_max"] / 2.0, 2),
+            "amp_max_prop": round(d["p"]["delta_T_max"] / 2.0, 2),
             "n_base": d["b"]["n"], "n_prop": d["p"]["n"]}
     return out
 
