@@ -1,0 +1,189 @@
+{
+  "fase": "Fase 6 - Validacao de Rainflow e Delimitacao de Confiabilidade (A15, A16)",
+  "A15_validacao_rainflow_astm_e1049": {
+    "onda_triangular": {
+      "entrada": [
+        0.0,
+        10.0,
+        0.0,
+        10.0,
+        0.0
+      ],
+      "ciclos_extraidos": [
+        {
+          "delta_T_K": 10.0,
+          "peso": 0.5
+        },
+        {
+          "delta_T_K": 10.0,
+          "peso": 0.5
+        },
+        {
+          "delta_T_K": 10.0,
+          "peso": 0.5
+        },
+        {
+          "delta_T_K": 10.0,
+          "peso": 0.5
+        }
+      ],
+      "total_ciclos": 2.0,
+      "passou": true
+    },
+    "onda_senoidal": {
+      "amplitude_declarada_K": 5.0,
+      "range_pico_a_pico_esperado_K": 10.0,
+      "ciclos_completos_extraidos_K": [
+        9.99914041287829,
+        9.999690545798785
+      ],
+      "total_ciclos_equivalentes": 3.5,
+      "passou": true
+    },
+    "astm_e1049_85_secao_5_4_4": {
+      "sequencia_referencia": [
+        0.0,
+        -2.0,
+        1.0,
+        -3.0,
+        5.0,
+        -1.0,
+        3.0,
+        -4.0,
+        4.0,
+        -2.0,
+        0.0
+      ],
+      "ciclos_individuais_extraidos": [
+        {
+          "delta_T_range_K": 2.0,
+          "semi_amplitude_K": 1.0,
+          "peso_ciclos": 0.5
+        },
+        {
+          "delta_T_range_K": 3.0,
+          "semi_amplitude_K": 1.5,
+          "peso_ciclos": 0.5
+        },
+        {
+          "delta_T_range_K": 4.0,
+          "semi_amplitude_K": 2.0,
+          "peso_ciclos": 0.5
+        },
+        {
+          "delta_T_range_K": 4.0,
+          "semi_amplitude_K": 2.0,
+          "peso_ciclos": 1.0
+        },
+        {
+          "delta_T_range_K": 8.0,
+          "semi_amplitude_K": 4.0,
+          "peso_ciclos": 0.5
+        },
+        {
+          "delta_T_range_K": 9.0,
+          "semi_amplitude_K": 4.5,
+          "peso_ciclos": 0.5
+        },
+        {
+          "delta_T_range_K": 8.0,
+          "semi_amplitude_K": 4.0,
+          "peso_ciclos": 0.5
+        },
+        {
+          "delta_T_range_K": 6.0,
+          "semi_amplitude_K": 3.0,
+          "peso_ciclos": 0.5
+        },
+        {
+          "delta_T_range_K": 2.0,
+          "semi_amplitude_K": 1.0,
+          "peso_ciclos": 0.5
+        }
+      ],
+      "multiconjunto_agregado_por_range": {
+        "2.0": 1.0,
+        "3.0": 0.5,
+        "4.0": 1.5,
+        "6.0": 0.5,
+        "8.0": 1.0,
+        "9.0": 0.5
+      },
+      "multiconjunto_prescrito_norma": {
+        "2.0": 1.0,
+        "3.0": 0.5,
+        "4.0": 1.5,
+        "6.0": 0.5,
+        "8.0": 1.0,
+        "9.0": 0.5
+      },
+      "soma_total_ciclos": 5.0,
+      "conformidade_exata_astm": true
+    }
+  },
+  "A16_delimitacao_black_e_coffin_manson": {
+    "delimitacao_metodologica": {
+      "natureza_das_metricas": "Índices comparativos relativos adimensionais (D_baseline / D_proposto)",
+      "proibicao_interpretativa": "Os valores reportados NÃO representam tempo absoluto até falha (MTTF em horas ou anos), pois as constantes geométricas e metalúrgicas específicas do encapsulamento (A_Black, A_interconnect, B_CM) cancelam-se na razão relativa.",
+      "hipotese_proxy_corrente_black": "A corrente de alimentação de cada domínio de core é modelada por I_i(t) = P_i(t) / V(f_i(t)) [A]. Assumindo seção transversal condutiva efetiva constante A_eff nas trilhas de alimentação VDD de cada die, a densidade de corrente normalizada J_i / J_ref = I_i / I_ref é exata.",
+      "parametros_adotados": {
+        "black_expoente_corrente_n": 1.8,
+        "black_energia_ativacao_Ea_eV": 0.7,
+        "coffin_manson_expoentes_q": [
+          1.9,
+          2.1
+        ],
+        "rainflow_limiares_histerese_K": [
+          0.25,
+          1.0,
+          2.0
+        ]
+      }
+    },
+    "verificacao_invariancia_algebrica": {
+      "erro_invariancia_escala_area_black": 4.440892098500626e-16,
+      "erro_invariancia_range_vs_semiamplitude_cm": 8.881784197001252e-16,
+      "invariancia_exata_verificada": true,
+      "exemplo_metricas_relativas": {
+        "Black_razao_soma": 2.464405416712819,
+        "Black_razao_pior_no": 2.465390737085132,
+        "J_rel_prop": 0.7973684210526315,
+        "CM": {
+          "0.25": {
+            "q21_pior_no": 2.86,
+            "q21_soma": 2.97,
+            "q19_soma": 2.52,
+            "delta_T_max_base": 12.96,
+            "delta_T_max_prop": 7.77,
+            "amp_max_base": 6.48,
+            "amp_max_prop": 3.88,
+            "n_base": 531,
+            "n_prop": 656
+          },
+          "1.00": {
+            "q21_pior_no": 3.11,
+            "q21_soma": 3.24,
+            "q19_soma": 2.9,
+            "delta_T_max_base": 12.96,
+            "delta_T_max_prop": 7.77,
+            "amp_max_base": 6.48,
+            "amp_max_prop": 3.88,
+            "n_base": 30,
+            "n_prop": 33
+          },
+          "2.00": {
+            "q21_pior_no": 3.11,
+            "q21_soma": 3.25,
+            "q19_soma": 2.9,
+            "delta_T_max_base": 12.96,
+            "delta_T_max_prop": 7.77,
+            "amp_max_base": 6.48,
+            "amp_max_prop": 3.88,
+            "n_base": 30,
+            "n_prop": 32
+          }
+        }
+      }
+    }
+  }
+}
