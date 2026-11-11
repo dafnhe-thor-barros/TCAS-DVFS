@@ -4,3 +4,5 @@
 *.toc
 *.bak
 *.synctex.gz
+__pycache__/
+*.pyc

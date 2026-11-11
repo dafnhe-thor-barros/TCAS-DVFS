@@ -46,7 +46,7 @@ def cenario(n_orb=3, dt=DT):
     """
     Gera o perfil ambiental e perfis de carga para simulação orbital LEO (500 km).
     Hipóteses Físicas Explícitas:
-    1. Órbita circular LEO equatorial/inclinada com período t_orb ≈ 5677 s.
+    1. Órbita circular LEO equatorial/inclinada com período t_orb ≈ 5668.14 s.
     2. Radiador voltado para o espaço profundo (T_space = 2.73 K) com fator de visão da Terra F_view = 0.42.
     3. Carga externa qext composta por:
        - Incidência solar direta modulada pelo zênite solar durante a fase iluminada (beta = 0);

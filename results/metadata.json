@@ -1,6 +1,6 @@
 {
   "project": "TCAS-DVFS: Thermal-Crosstalk-Aware Scheduling and Model Predictive DVFS for Spaceborne AI",
-  "timestamp_utc": "2026-11-11T20:38:24.370915+00:00",
+  "timestamp_utc": "2026-11-11T22:10:00.000000+00:00",
   "environment": {
     "python_version": "3.14.6",
     "python_executable": "C:\\Python314\\python.exe",
@@ -12,7 +12,6 @@
   },
   "version_control": {
     "vcs": "git",
-    "git_commit_hash": "3857eb661d7762cf6415d44daa253ff2cf5323cf",
     "repository": "https://github.com/dafnhe-thor-barros/TCAS-DVFS"
   },
   "simulation_parameters": {
@@ -28,6 +27,8 @@
     "dt_sched_s": 120.0,
     "prediction_horizon_steps": 30,
     "control_horizon_steps": 8,
+    "decision_variables_mpc": 152,
+    "spatial_temporal_slacks": 120,
     "thermal_cap_tcap_degC": 83.0,
     "thermal_barrier_tbar_degC": 84.5,
     "noise_seeds": [
@@ -49,14 +50,17 @@
     "primary_campaign": "python experiments/run_experimentos.py --orbitas 3 --orbitas-ablacao 1 --sementes 10 --saida results",
     "uncertainty_campaign": "python experiments/run_incerteza.py --amostras 30 --orbitas 3 --saida results",
     "rainflow_validation": "python experiments/validacao_rainflow.py",
+    "jacobian_validation": "python experiments/validacao_jacobiano.py",
+    "pinn_validation": "python experiments/validar_pinn.py",
     "temporal_convergence": "python experiments/run_convergencia_temporal.py"
   },
   "data_manifest": {
-    "results/tabela1.csv": "Desempenho consolidado das 8 pol\u00edticas de controle em 3 \u00f3rbitas (semente 0)",
-    "results/tabela_sementes.csv": "Estat\u00edsticas de dispers\u00e3o entre 10 sementes estoc\u00e1sticas de ru\u00eddo de sensor",
-    "results/ablacao.csv": "Estudo de abla\u00e7\u00e3o funcional arquitetural (1 \u00f3rbita, semente 0)",
+    "results/tabela1.csv": "Desempenho consolidado das 8 políticas de controle em 3 órbitas (semente 0)",
+    "results/tabela_sementes.csv": "Estatísticas de dispersão entre 10 sementes estocásticas de ruído de sensor",
+    "results/ablacao.csv": "Estudo de ablação funcional arquitetural (1 órbita, semente 0)",
     "results/amostras.csv": "Matriz de 30 amostras de amostragem por hipercubo latino (LHS, +-20%)",
-    "results/convergencia_temporal.csv": "Avalia\u00e7\u00e3o do erro num\u00e9rico com dt in [1.0, 0.5, 0.25, 0.125] s",
+    "results/convergencia_temporal.csv": "Avaliação do erro numérico com dt in [1.0, 0.5, 0.25, 0.125] s",
+    "results/fig_validacao_pinn.png": "Curvas de validação out-of-sample da PINN térmica frente ao ground truth Heun",
     "results/metadata.json": "Metadados de reprodutibilidade e ambiente computacional"
   }
 }

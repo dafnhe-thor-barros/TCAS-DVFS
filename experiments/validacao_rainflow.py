@@ -6,21 +6,20 @@ Verifica:
 1. Conformidade com a terminologia da norma ASTM E1049-85 (reaprovada 2017).
 2. Se o valor retornado representa Range (delta_T = pico - vale) ou Amplitude (delta_T / 2).
 3. Teste analítico com onda senoidal pura e triangular (ciclos fechados conhecidos).
-4. Teste de referência com vetor padrão da norma ASTM E1049 (Seção 5.4.4).
+4. Teste de referência com vetor padrão da norma ASTM E1049 (Seção 5.4.4), verificando o multiconjunto completo exato de ciclos.
 5. Impacto na formulação de fadiga Coffin-Manson: N_f = B * (delta_T)^(-q).
 """
 
+import os
 import sys
-import sys, os
+import numpy as np
+
 _src_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'src'))
 if _src_dir not in sys.path:
     sys.path.insert(0, _src_dir)
-import os
-import numpy as np
 
-# Adicionar caminho para importar tcas_core
-sys.path.insert(0, os.path.dirname(__file__))
 import tcas_core as C
+
 
 def test_onda_triangular():
     """Onda triangular de 0 a 10 K (2 ciclos completos)."""
@@ -28,8 +27,6 @@ def test_onda_triangular():
     t = [0.0, 10.0, 0.0, 10.0, 0.0]
     ciclos = C.rainflow(t, th=0.1)
     
-    # O range pico-a-pico delta_T é exatamente 10.0 K.
-    # A amplitude Sa seria 5.0 K.
     ranges = [c[0] for c in ciclos]
     pesos = [c[1] for c in ciclos]
     
@@ -44,9 +41,6 @@ def test_onda_triangular():
 
 def test_onda_senoidal():
     """Senoide com amplitude 5.0 K (offset 80 K)."""
-    # y(t) = 80 + 5 * sin(t), logo T_max = 85 K, T_min = 75 K.
-    # Ciclos fechados entre pico e vale têm range delta_T = 10.0 K (2 * amplitude).
-    # O início (80 -> 85) e fim (85 -> 80) geram meio-ciclos de range 5.0 K.
     theta = np.linspace(0, 6 * np.pi, 300) # 3 ciclos
     y = 80.0 + 5.0 * np.sin(theta)
     ciclos = C.rainflow(y, th=0.1)
@@ -69,25 +63,50 @@ def test_astm_e1049_referencia():
     """
     Vetor de teste clássico da norma ASTM E1049-85 (Seção 5.4.4):
     Sequência de picos e vales: [0, -2, 1, -3, 5, -1, 3, -4, 4, -2, 0]
+    Verifica o multiconjunto completo exato de ciclos e meios-ciclos prescritos na Seção 5.4.4 da norma.
     """
     pts = [0.0, -2.0, 1.0, -3.0, 5.0, -1.0, 3.0, -4.0, 4.0, -2.0, 0.0]
     ciclos = C.rainflow(pts, th=0.01)
     
     print("\n--- Teste 3: Vetor Padrão ASTM E1049-85 (Seção 5.4.4) ---")
     print(f"  Pontos de entrada: {pts}")
-    total_ciclos = 0.0
+    
+    # Agrupar ciclos por range térmico
+    contagem_ranges = {}
     for r, w in ciclos:
+        if r < 1e-4:
+            continue
+        contagem_ranges[r] = contagem_ranges.get(r, 0.0) + w
         print(f"  Range: {r:4.1f} | Peso: {w:3.1f}")
-        total_ciclos += w
         
-    # Na norma ASTM E1049:
-    # O sub-ciclo entre -1 e 3 tem range 4.0 e fecha 1.0 ciclo completo
-    # O ciclo entre -4 e 4 tem range 8.0 e fecha 1.0 ciclo completo
-    # Outros ciclos parciais (0.5) somam o restante
-    ranges_fechados = [r for (r, w) in ciclos if w == 1.0]
-    assert 4.0 in ranges_fechados, "Ciclo fechado de range 4.0 não detectado!"
+    # Especificações prescritas pela norma ASTM E1049-85 Seção 5.4.4:
+    # 1. Ciclo completo fechado entre -1 e +3: Range = 4.0, contagem = 1.0 (mais meio-ciclo residual de 4.0 -> total 1.5)
+    # 2. Meios-ciclos residuais entre os pontos de inflexão:
+    #    - Range 2.0: dois meios-ciclos (0 -> -2 e -2 -> 0) -> total 1.0
+    #    - Range 3.0: um meio-ciclo (-2 -> 1) -> total 0.5
+    #    - Range 4.0: um meio-ciclo (1 -> -3) + um ciclo completo fechado (-1 -> 3) -> total 1.5
+    #    - Range 6.0: um meio-ciclo (4 -> -2) -> total 0.5
+    #    - Range 8.0: dois meios-ciclos (-3 -> 5 e -4 -> 4) -> total 1.0
+    #    - Range 9.0: um meio-ciclo (5 -> -4) -> total 0.5
+    
+    esperado = {
+        2.0: 1.0,
+        3.0: 0.5,
+        4.0: 1.5,
+        6.0: 0.5,
+        8.0: 1.0,
+        9.0: 0.5
+    }
+    
+    for r_esp, w_esp in esperado.items():
+        w_obt = contagem_ranges.get(r_esp, 0.0)
+        assert np.isclose(w_obt, w_esp), f"Range {r_esp}: esperado peso {w_esp}, obtido {w_obt}"
+        print(f"  [OK] Range {r_esp:4.1f} -> Contagem total ASTM: {w_obt:.1f} (esperado: {w_esp:.1f})")
+        
+    total_ciclos = sum(contagem_ranges.values())
+    assert np.isclose(total_ciclos, 5.0), f"Esperava 5.0 ciclos acumulados, obtido {total_ciclos}"
     print(f"  Total acumulado de ciclos equivalentes: {total_ciclos:.1f}")
-    print("  [OK] Conformidade com regras de fechamento e resíduo da ASTM E1049.")
+    print("  [OK] Conformidade com o multiconjunto exato e regras de resíduo da ASTM E1049-85 Seção 5.4.4.")
 
 
 def test_implicacao_coffin_manson():
