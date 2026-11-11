@@ -1,0 +1,279 @@
+{
+  "fase": "Fase 4 - Auditoria Formal e Validacao do SDP (A11, A12)",
+  "A11_formulacao_matematica": {
+    "problema_otimizacao": "min_{Y in S^17} <Cm, Y> s.a. E vec(Y) = e, Z1 = Y in S_+^17 (PSD), Z2 = Y >= 0 (duplamente não-negativo)",
+    "dimensoes": {
+      "N_dies": 4,
+      "n_binarias": 16,
+      "d_matriz_levantada": 17,
+      "n_restricoes_afins": 289
+    },
+    "variaveis_primais": {
+      "Y": "Matriz levantada 17x17 satisfazendo exatamente o subespaço afim E vec(Y) = e",
+      "Z1": "Projeção de consenso no cone semidefinido positivo S_+^17 via decomposição espectral",
+      "Z2": "Projeção de consenso no ortante não-negativo R_+^(17x17)"
+    },
+    "variaveis_duais": {
+      "U1": "Multiplicador dual escalonado associado ao consenso Y - Z1 = 0",
+      "U2": "Multiplicador dual escalonado associado ao consenso Y - Z2 = 0"
+    },
+    "equacoes_atualizacao_admm": [
+      "1. Passo afim (Y): v_tg = vec(0.5*((Z1 - U1) + (Z2 - U2)) - Cm/(2*rho)); vec(Y) = v_tg - E^+ (E v_tg - e)",
+      "2. Passo cônico PSD (Z1): Z1 = V diag(max(lambda(Y + U1), 0)) V^T",
+      "3. Passo cônico não-negativo (Z2): Z2 = max(Y + U2, 0)",
+      "4. Passo dual (U1, U2): U1 <- U1 + Y - Z1; U2 <- U2 + Y - Z2"
+    ],
+    "residuos_e_tolerancias": {
+      "r_pri": "sqrt(||Y - Z1||_F^2 + ||Y - Z2||_F^2)",
+      "r_dua": "rho * ||(I - E^+ E) vec((Z1 - Z1_old) + (Z2 - Z2_old))||_2",
+      "eps_pri": "1e-4 + 1e-3 * max(sqrt(2)*||Y||_F, sqrt(||Z1||_F^2 + ||Z2||_F^2))",
+      "eps_dua": "1e-4 + 1e-3 * rho * ||(I - E^+ E) vec(U1 + U2)||_2"
+    },
+    "distincao_conceitual_estrita_A12": {
+      "viabilidade": "Medida por ||E vec(Y) - e||_inf, lambda_min(Z1) e min(Z2)",
+      "convergencia_numerica": "Medida por r_pri <= eps_pri e r_dua <= eps_dua",
+      "qualidade_heuristica": "Medida por exact_hit e heuristic_suboptimality_ratio = (J_round - J_exact)/(J_mean - J_exact)",
+      "otimalidade_certificada": "Para N=4, o ótimo global exato J_exact é certificado diretamente pela enumeração exata das 4! = 24 permutações em O(N!), eliminando qualquer necessidade de reivindicar limite dual aproximado do ADMM."
+    }
+  },
+  "A12_resumo_warm_start_50_instancias": {
+    "n_instances": 50,
+    "viabilidade_semidefinida_Z1": {
+      "min_lambda_min_Z1": -1.077768676678684e-15,
+      "max_lambda_min_Z1": -3.3963055036710887e-17,
+      "psd_strictly_satisfied_tol_1e_14": true
+    },
+    "viabilidade_espaco_Y_consenso": {
+      "min_lambda_min_Y": -0.0002894522922556626,
+      "mean_lambda_min_Y": -4.300071484318496e-05
+    },
+    "viabilidade_afim_EY_eq_e": {
+      "max_affine_viol_inf": 5.218048215738236e-15,
+      "mean_affine_viol_inf": 2.753743413852483e-15,
+      "affine_satisfied_tol_1e_12": true
+    },
+    "viabilidade_nao_negatividade_Z2": {
+      "min_entry_Z2": 0.0,
+      "nonnegative_satisfied": true
+    },
+    "convergencia_numerica_admm": {
+      "convergence_rate_pct": 42.0,
+      "mean_iterations": 94.8,
+      "mean_r_pri": 0.0016656088748467225,
+      "max_r_pri": 0.009270179434407161,
+      "mean_r_dua": 0.015285193683230502,
+      "max_r_dua": 0.03389439139905023
+    },
+    "qualidade_heuristica_pos_arredondamento": {
+      "exact_hit_rate_pct": 100.0,
+      "mean_heuristic_suboptimality_ratio": 5.735088090471896e-16,
+      "max_heuristic_suboptimality_ratio": 1.6628869727948707e-14
+    }
+  },
+  "A12_resumo_cold_start_50_instancias": {
+    "n_instances": 50,
+    "viabilidade_semidefinida_Z1": {
+      "min_lambda_min_Z1": -9.573105600973358e-16,
+      "max_lambda_min_Z1": -4.2083867016390946e-17,
+      "psd_strictly_satisfied_tol_1e_14": true
+    },
+    "viabilidade_espaco_Y_consenso": {
+      "min_lambda_min_Y": -0.0020041352620202477,
+      "mean_lambda_min_Y": -0.0001314589089226935
+    },
+    "viabilidade_afim_EY_eq_e": {
+      "max_affine_viol_inf": 5.245803791353865e-15,
+      "mean_affine_viol_inf": 2.729066972406713e-15,
+      "affine_satisfied_tol_1e_12": true
+    },
+    "viabilidade_nao_negatividade_Z2": {
+      "min_entry_Z2": 0.0,
+      "nonnegative_satisfied": true
+    },
+    "convergencia_numerica_admm": {
+      "convergence_rate_pct": 62.0,
+      "mean_iterations": 82.8,
+      "mean_r_pri": 0.002429741767508534,
+      "max_r_pri": 0.00837806936626854,
+      "mean_r_dua": 0.012567876681593614,
+      "max_r_dua": 0.027644615823776374
+    },
+    "qualidade_heuristica_pos_arredondamento": {
+      "exact_hit_rate_pct": 100.0,
+      "mean_heuristic_suboptimality_ratio": 3.3257739455897414e-16,
+      "max_heuristic_suboptimality_ratio": 1.6628869727948707e-14
+    }
+  },
+  "A12_amostras_detalhadas_warm": [
+    {
+      "instance": 0,
+      "J_exact_min": 5.565394737492646,
+      "J_sdp_rounded": 5.565394737492646,
+      "exact_hit": 1,
+      "heuristic_suboptimality_ratio": 0.0,
+      "it": 100,
+      "converged": true,
+      "r_pri": 0.0008469847297843139,
+      "r_dua": 0.00911055682764075,
+      "eps_pri": 0.009444855903024716,
+      "eps_dua": 0.013979452341309609,
+      "affine_viol_inf": 3.677613769070831e-15,
+      "lambda_min_Z1": -1.841899842466775e-16,
+      "lambda_min_Y": -0.00020504741995286939,
+      "min_Z2": 0.0
+    },
+    {
+      "instance": 1,
+      "J_exact_min": 28.31441200076835,
+      "J_sdp_rounded": 28.31441200076835,
+      "exact_hit": 1,
+      "heuristic_suboptimality_ratio": 0.0,
+      "it": 120,
+      "converged": false,
+      "r_pri": 9.880090218561733e-08,
+      "r_dua": 0.010465415076951734,
+      "eps_pri": 0.009964816282935728,
+      "eps_dua": 0.008028315637895453,
+      "affine_viol_inf": 3.247402347028583e-15,
+      "lambda_min_Z1": -1.8685860073903672e-16,
+      "lambda_min_Y": -5.522524168564058e-15,
+      "min_Z2": 0.0
+    },
+    {
+      "instance": 2,
+      "J_exact_min": 17.812939113971428,
+      "J_sdp_rounded": 17.812939113971428,
+      "exact_hit": 1,
+      "heuristic_suboptimality_ratio": 0.0,
+      "it": 120,
+      "converged": false,
+      "r_pri": 6.230787150320203e-05,
+      "r_dua": 0.01436002021693545,
+      "eps_pri": 0.011190224882095026,
+      "eps_dua": 0.008499074170703492,
+      "affine_viol_inf": 1.9441913357010066e-15,
+      "lambda_min_Z1": -2.0345859483570703e-16,
+      "lambda_min_Y": -8.495458037985955e-06,
+      "min_Z2": 0.0
+    },
+    {
+      "instance": 3,
+      "J_exact_min": 30.71178978929149,
+      "J_sdp_rounded": 30.71178978929149,
+      "exact_hit": 1,
+      "heuristic_suboptimality_ratio": 0.0,
+      "it": 30,
+      "converged": true,
+      "r_pri": 0.003326295601279821,
+      "r_dua": 0.011559679105379021,
+      "eps_pri": 0.011529968811418509,
+      "eps_dua": 0.013113480514950761,
+      "affine_viol_inf": 5.218048215738236e-15,
+      "lambda_min_Z1": -1.4553313544888007e-16,
+      "lambda_min_Y": -3.029475278940032e-15,
+      "min_Z2": 0.0
+    },
+    {
+      "instance": 4,
+      "J_exact_min": 9.278107433934956,
+      "J_sdp_rounded": 9.278107433934956,
+      "exact_hit": 1,
+      "heuristic_suboptimality_ratio": 0.0,
+      "it": 120,
+      "converged": false,
+      "r_pri": 0.00043545891876447146,
+      "r_dua": 0.013896956035029094,
+      "eps_pri": 0.010761162879327513,
+      "eps_dua": 0.013160979847306851,
+      "affine_viol_inf": 2.6298407895808396e-15,
+      "lambda_min_Z1": -1.3755482527638341e-16,
+      "lambda_min_Y": -1.9353824942374667e-05,
+      "min_Z2": 0.0
+    },
+    {
+      "instance": 5,
+      "J_exact_min": 22.885555249416168,
+      "J_sdp_rounded": 22.885555249416168,
+      "exact_hit": 1,
+      "heuristic_suboptimality_ratio": 0.0,
+      "it": 120,
+      "converged": false,
+      "r_pri": 4.44390742823127e-06,
+      "r_dua": 0.016228553910983334,
+      "eps_pri": 0.01051121162617435,
+      "eps_dua": 0.009253076433617367,
+      "affine_viol_inf": 3.2751579226442118e-15,
+      "lambda_min_Z1": -1.8894698513898777e-16,
+      "lambda_min_Y": -2.088442734998719e-15,
+      "min_Z2": 0.0
+    },
+    {
+      "instance": 6,
+      "J_exact_min": 13.932787651060472,
+      "J_sdp_rounded": 13.932787651060472,
+      "exact_hit": 1,
+      "heuristic_suboptimality_ratio": 0.0,
+      "it": 120,
+      "converged": true,
+      "r_pri": 0.001913683698362927,
+      "r_dua": 0.008258017654328539,
+      "eps_pri": 0.010857175915384683,
+      "eps_dua": 0.011145683283663072,
+      "affine_viol_inf": 2.220446049250313e-15,
+      "lambda_min_Z1": -5.945623438865257e-16,
+      "lambda_min_Y": -2.652915415080761e-06,
+      "min_Z2": 0.0
+    },
+    {
+      "instance": 7,
+      "J_exact_min": 18.840684435891795,
+      "J_sdp_rounded": 18.840684435891795,
+      "exact_hit": 1,
+      "heuristic_suboptimality_ratio": 0.0,
+      "it": 20,
+      "converged": true,
+      "r_pri": 0.002387785834504521,
+      "r_dua": 0.011960683786221626,
+      "eps_pri": 0.011017222719226243,
+      "eps_dua": 0.013451249299275977,
+      "affine_viol_inf": 3.0531133177191805e-15,
+      "lambda_min_Z1": -5.531726046122119e-16,
+      "lambda_min_Y": -4.703923564780611e-05,
+      "min_Z2": 0.0
+    },
+    {
+      "instance": 8,
+      "J_exact_min": 20.219150411651412,
+      "J_sdp_rounded": 20.219150411651412,
+      "exact_hit": 1,
+      "heuristic_suboptimality_ratio": 0.0,
+      "it": 20,
+      "converged": true,
+      "r_pri": 0.0034808499541216322,
+      "r_dua": 0.013321006626437197,
+      "eps_pri": 0.011071398808181785,
+      "eps_dua": 0.014076761325326452,
+      "affine_viol_inf": 4.551914400963142e-15,
+      "lambda_min_Z1": -6.704609098129268e-16,
+      "lambda_min_Y": -0.00022610548561137733,
+      "min_Z2": 0.0
+    },
+    {
+      "instance": 9,
+      "J_exact_min": 3.6885466010282832,
+      "J_sdp_rounded": 3.6885466010282832,
+      "exact_hit": 1,
+      "heuristic_suboptimality_ratio": 0.0,
+      "it": 120,
+      "converged": false,
+      "r_pri": 0.00017932173665811043,
+      "r_dua": 0.021509843897464746,
+      "eps_pri": 0.013549049359901661,
+      "eps_dua": 0.012250292901190474,
+      "affine_viol_inf": 4.218847493575595e-15,
+      "lambda_min_Z1": -8.587201787040203e-17,
+      "lambda_min_Y": -3.0073917699861766e-15,
+      "min_Z2": 0.0
+    }
+  ]
+}

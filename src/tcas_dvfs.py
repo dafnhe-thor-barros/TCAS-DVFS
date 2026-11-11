@@ -49,7 +49,8 @@ def fabrica_sdp(N=4, iters=120, rho=1.0, n_round=24, seed=0):
     for a in Acon:
         for l in range(d):
             fila([(1 + j, l, a[j]) for j in range(n) if a[j] != 0] + [(0, l, -1.0)], 0.0)
-    E = np.array(E); e = np.array(e); Ep = np.linalg.pinv(E)
+    # rcond=1e-10 descarta valores singulares nulos algebricos (~1.5e-14) das linhas redundantes de E
+    E = np.array(E); e = np.array(e); Ep = np.linalg.pinv(E, rcond=1e-10)
     perms = np.array(list(itertools.permutations(range(N)))); Xv = np.zeros((len(perms), n))
     for kq, pm in enumerate(perms):
         for i in range(N):
@@ -63,7 +64,21 @@ def fabrica_sdp(N=4, iters=120, rho=1.0, n_round=24, seed=0):
         Q = 0.5 * (Q + Q.T); Jall = np.einsum('ki,ij,kj->k', Xv, Q, Xv); kex = int(np.argmin(Jall))
         dg = {"Jex": float(Jall[kex]), "Jmed": float(Jall.mean()), "it": 0}
         if modo == "exato":                                        # Enumeracao exata para benchmarking
-            dg.update({"J": dg["Jex"], "gap_faixa": 0.0, "excess_exato": 0.0, "hit": 1, "converged": True, "r_pri": 0.0, "r_dua": 0.0})
+            dg.update({
+                "J": dg["Jex"],
+                "heuristic_suboptimality_ratio": 0.0,
+                "excess_exato": 0.0,
+                "hit": 1,
+                "converged": True,
+                "r_pri": 0.0,
+                "r_dua": 0.0,
+                "eps_pri": 0.0,
+                "eps_dua": 0.0,
+                "affine_viol_inf": 0.0,
+                "lambda_min_Z1": 0.0,
+                "lambda_min_Y": 0.0,
+                "min_Z2": 0.0,
+            })
             return perms[kex], dg
         sc_ = max(1e-9, float(np.abs(Q).max())); Cm = np.zeros((d, d)); Cm[1:, 1:] = Q / sc_
         if (not warm) or st["Z1"] is None:
@@ -74,32 +89,59 @@ def fabrica_sdp(N=4, iters=120, rho=1.0, n_round=24, seed=0):
         it = 0
         r_pri = 0.0
         r_dua = 0.0
+        eps_pri = 1e-3
+        eps_dua = 1e-3
+        Y = Z1.copy()
         for it in range(iters):                                    # ADMM: Z1 in PSD, Z2 >= 0, restricoes afins
             Z1_old = Z1.copy(); Z2_old = Z2.copy()
             tg = 0.5 * ((Z1 - U1) + (Z2 - U2)) - Cm / (2.0 * rho); v = tg.reshape(-1)
-            Y = (v - Ep @ (E @ v - e)).reshape(d, d)
+            yv = v - Ep @ (E @ v - e)
+            Y = yv.reshape(d, d)
             Z1 = psd(Y + U1); Z2 = np.maximum(Y + U2, 0.0); U1 = U1 + Y - Z1; U2 = U2 + Y - Z2
-            r_pri = float(np.linalg.norm(Y - Z1) + np.linalg.norm(Y - Z2))
-            # Projeção exata do resíduo dual sobre a variedade afim de consenso (E Delta_v = 0)
+            # Resíduo primal de consenso 2-blocos: sqrt(||Y - Z1||_F^2 + ||Y - Z2||_F^2)
+            r_pri = float(np.sqrt(np.sum((Y - Z1) ** 2) + np.sum((Y - Z2) ** 2)))
+            # Projeção exata do resíduo dual sobre o subespaço nulo afim de consenso (E Delta_v = 0)
             dZ = (Z1 - Z1_old) + (Z2 - Z2_old)
             dv = dZ.reshape(-1)
             dv_proj = dv - Ep @ (E @ dv)
             r_dua = float(rho * np.linalg.norm(dv_proj))
-            if it % 20 == 19 and r_pri < 1e-3 and r_dua < 1e-3:
+            # Tolerâncias combinadas absolutas e relativas para norma de Frobenius (Boyd et al., 2011, Eq. 3.12)
+            norm_Y = float(np.sqrt(2.0) * np.linalg.norm(Y))
+            norm_Z = float(np.sqrt(np.sum(Z1 ** 2) + np.sum(Z2 ** 2)))
+            norm_U = float(rho * np.sqrt(np.sum(U1 ** 2) + np.sum(U2 ** 2)))
+            eps_pri = float(np.sqrt(2.0 * d * d) * 1e-4 + 2e-3 * max(norm_Y, norm_Z))
+            eps_dua = float(d * 1e-4 + 2e-3 * max(norm_U, float(np.linalg.norm(Cm))))
+            if it >= 19 and it % 10 == 9 and r_pri <= eps_pri and r_dua <= eps_dua:
                 break
         st["Z1"], st["Z2"], st["U1"], st["U2"] = Z1, Z2, U1, U2
-        w_, V_ = np.linalg.eigh(Z1); Vm = V_ * np.sqrt(np.maximum(w_, 0.0))
+        w_, V_ = np.linalg.eigh(0.5 * (Z1 + Z1.T)); Vm = V_ * np.sqrt(np.maximum(w_, 0.0))
+        w_Y = np.linalg.eigvalsh(0.5 * (Y + Y.T))
+        affine_viol = float(np.max(np.abs(E @ Y.reshape(-1) - e)))
         cands = [int(np.argmax(Xv @ Z1[1:, 0]))]                   # Projecao da 1a coluna
         for _ in range(n_round):                                   # Arredondamento por hiperplanos aleatorios
             pj = Vm @ rng.standard_normal(d); sg = 1.0 if pj[0] >= 0 else -1.0
             cands.append(int(np.argmax(Xv @ (pj[1:] * sg))))
         kb = min(set(cands), key=lambda kk: Jall[kk])
-        # Excesso heuristico normalizado em relacao ao otimo exato
-        exc = float((Jall[kb] - Jall[kex]) / max(dg["Jmed"] - dg["Jex"], 1e-9))
-        convergiu = bool(r_pri < 1e-3 and r_dua < 1e-3)
-        dg.update({"J": float(Jall[kb]), "it": it + 1, "hit": int(kb == kex),
-                   "gap_faixa": exc, "excess_exato": exc, "converged": convergiu,
-                   "r_pri": r_pri, "r_dua": r_dua})
+        # Razão de subotimalidade heurística pós-arredondamento em relação à enumeração exata (não é gap dual certificado)
+        exc = float(max(0.0, Jall[kb] - Jall[kex]) / max(dg["Jmed"] - dg["Jex"], 1e-9))
+        is_opt = bool(Jall[kb] <= Jall[kex] + 1e-12 * max(1.0, abs(float(Jall[kex]))))
+        convergiu = bool(r_pri <= eps_pri and r_dua <= eps_dua)
+        dg.update({
+            "J": float(Jall[kb]),
+            "it": it + 1,
+            "hit": int(is_opt),
+            "heuristic_suboptimality_ratio": exc,
+            "excess_exato": exc,
+            "converged": convergiu,
+            "r_pri": r_pri,
+            "r_dua": r_dua,
+            "eps_pri": eps_pri,
+            "eps_dua": eps_dua,
+            "affine_viol_inf": affine_viol,
+            "lambda_min_Z1": float(w_[0]),
+            "lambda_min_Y": float(w_Y[0]),
+            "min_Z2": float(np.min(Z2)),
+        })
         return perms[kb], dg
     return escolher
 
