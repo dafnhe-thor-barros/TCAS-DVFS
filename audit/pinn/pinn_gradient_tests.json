@@ -1,0 +1,75 @@
+{
+  "testes": {
+    "T01_w_phys_zero": {
+      "max_diff_from_pure_supervised": 0.0,
+      "passou": true
+    },
+    "T02_w_phys_positivo_camadas": {
+      "grad_phys_norm_per_layer": [
+        1.9178869592156313,
+        1.748613653367531,
+        2.2615660812755136
+      ],
+      "passou": true
+    },
+    "T03_sensibilidade_w_phys": {
+      "delta_grad_total_norm_per_layer": [
+        4.794717398039093,
+        4.371534133418839,
+        5.653915203188876
+      ],
+      "passou": true
+    },
+    "T04_ic_backprop_todas_camadas": {
+      "grad_ic_norm_per_layer": [
+        549.8740875362556,
+        375.1345942718322,
+        646.8392587530727
+      ],
+      "passou": true
+    },
+    "T05_consistencia_diferencas_finitas": {
+      "rel_err_phys_W_per_layer": [
+        2.3395035447567163e-09,
+        2.4629446879409665e-09,
+        9.187867852356083e-10
+      ],
+      "rel_err_phys_b_per_layer": [
+        2.2337589311234167e-09,
+        1.5935214038710658e-09,
+        3.668377070628693e-10
+      ],
+      "rel_err_total_W_per_layer": [
+        3.2171276919982627e-09,
+        4.182957849423332e-09,
+        6.057310349872364e-10
+      ],
+      "rel_err_total_b_per_layer": [
+        2.280107338261894e-09,
+        1.6174347580970782e-09,
+        5.051872677789786e-10
+      ],
+      "max_rel_err": 4.182957849423332e-09,
+      "passou": true
+    },
+    "T06_cobertura_integral_lotes": {
+      "n_samples_total": 103,
+      "batch_size": 32,
+      "remainder_batch_size": 7,
+      "samples_seen_per_epoch": [
+        103,
+        103,
+        103
+      ],
+      "passou": true
+    },
+    "T07_colocacao_independente": {
+      "n_supervisionados": 100,
+      "n_colocacao": 200,
+      "intersecao_indices": 0,
+      "min_distancia_temporal_s": 2.2131566321704668,
+      "passou": true
+    }
+  },
+  "todos_aprovados": true
+}
