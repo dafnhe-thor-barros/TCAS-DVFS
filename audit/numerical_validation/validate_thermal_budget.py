@@ -15,9 +15,10 @@ Executa:
    - Fechamento do orçamento admissível:
        P_budget = min(P_cond,max, Q_rad,emit - q_m + P_buffer)  [W]
 
-2. A10: Comparação quantitativa entre o orçamento analítico fechado e o orçamento máximo
-   exato obtido por integração numérica não linear (Heun, dt = 0.5 s) via bisseção sobre a
-   EDO completa de 5 estados ao longo de 7 regimes operacionais:
+2. A10 (proxy numérico): Comparação exploratória entre o orçamento analítico e uma integração
+   Heun de 5 estados com injeção térmica constante distribuída igualmente entre os dies.
+   Esta integração NÃO recalcula potência dinâmica e fuga em função de T e f e, portanto,
+   NÃO representa a planta eletrotérmica completa nem valida o controlador TCAS-DVFS. Regimes:
    (1) Regime estacionário
    (2) Aquecimento transitório
    (3) Resfriamento
@@ -93,11 +94,12 @@ def calcular_orcamento_analitico(xh, al, qm, t_cap=83.0, tau_horiz=240.0, par=C.
     }
 
 
-def simular_horizonte_ode_potencia_constante(xh0, P_alvo_total, qext_serie, dt=0.5, par=C.NOM):
-    """
-    Integra a EDO de 5 estados por Heun sob potência total constante P_alvo_total distribuída
-    uniformemente entre os 4 dies (ou proporcionalmente) ao longo do horizonte tau_horiz,
-    para determinar a temperatura máxima atingida pelos dies e a temperatura final do radiador.
+def simular_horizonte_ode_injecao_constante(xh0, P_alvo_total, qext_serie, dt=0.5, par=C.NOM):
+    """Integração Heun com injeção térmica constante e uniforme nos quatro dies.
+
+    Esta função é um proxy térmico: não chama C.deriv() e não recalcula potência
+    dinâmica/fuga em função da temperatura e da frequência. Não deve ser descrita
+    como integração da planta eletrotérmica completa.
     """
     x = xh0.copy().astype(float)
     nt = len(qext_serie)
@@ -129,7 +131,7 @@ def simular_horizonte_ode_potencia_constante(xh0, P_alvo_total, qext_serie, dt=0
     }
 
 
-def orcamento_numerico_ode_exato(xh0, Trad_max_K, Tcap_K, qext_serie, dt=0.5, par=C.NOM):
+def orcamento_numerico_ode_proxy(xh0, Trad_max_K, Tcap_K, qext_serie, dt=0.5, par=C.NOM):
     """
     Encontra por bisseção sobre a integração numérica não linear de Heun da EDO de 5 estados
     a potência total constante máxima P_ode_max [W] no horizonte de 240 s tal que:
@@ -150,7 +152,7 @@ def orcamento_numerico_ode_exato(xh0, Trad_max_K, Tcap_K, qext_serie, dt=0.5, pa
     lo, hi = 0.0, 200.0
     for _ in range(45):
         mid = 0.5 * (lo + hi)
-        sim = simular_horizonte_ode_potencia_constante(xh0, mid, qext_serie, dt=dt, par=par)
+        sim = simular_horizonte_ode_injecao_constante(xh0, mid, qext_serie, dt=dt, par=par)
         if sim["max_T_die_K"] <= Tcap_K and sim["final_Trad_K"] <= Trad_target:
             lo = mid
         else:
@@ -161,7 +163,7 @@ def orcamento_numerico_ode_exato(xh0, Trad_max_K, Tcap_K, qext_serie, dt=0.5, pa
     lo2, hi2 = 0.0, 200.0
     for _ in range(45):
         mid = 0.5 * (lo2 + hi2)
-        sim = simular_horizonte_ode_potencia_constante(xh0, mid, qext_serie, dt=dt, par=par)
+        sim = simular_horizonte_ode_injecao_constante(xh0, mid, qext_serie, dt=dt, par=par)
         if sim["max_T_die_K"] <= Tcap_K:
             lo2 = mid
         else:
@@ -246,13 +248,13 @@ def main():
         al = c["al"]
 
         ana = calcular_orcamento_analitico(xh, al, qm, t_cap=t_cap, tau_horiz=tau_horiz)
-        p_ode_acop, p_ode_tcap, trad_target = orcamento_numerico_ode_exato(
+        p_ode_acop, p_ode_tcap, trad_target = orcamento_numerico_ode_proxy(
             xh, ana["Trad_max_K"], Tcap_K, qext_s, dt=dt
         )
 
         # Simula a EDO aplicando exatamente o orçamento analítico (ou P_min_cores em contingência)
         p_aplicado = ana["P_min_cores_W"] if ana["inviavel_fisico"] else ana["P_budget_analitico_W"]
-        sim_ana = simular_horizonte_ode_potencia_constante(xh, p_aplicado, qext_s, dt=dt)
+        sim_ana = simular_horizonte_ode_injecao_constante(xh, p_aplicado, qext_s, dt=dt)
 
         erro_w = float(ana["P_budget_analitico_W"] - p_ode_acop)
         erro_rel_pct = float(100.0 * abs(erro_w) / max(p_ode_acop, 1e-6))
@@ -272,8 +274,13 @@ def main():
                     "P_aplicado_W": float(p_aplicado),
                     "max_T_die_240s_C": float(sim_ana["max_T_die_K"] - 273.15),
                     "final_Trad_240s_C": float(sim_ana["final_Trad_K"] - 273.15),
-                    "respeitou_Tcap_em_operacao_viavel": bool(
-                        ana["inviavel_fisico"] or (sim_ana["max_T_die_K"] <= Tcap_K + 1e-3)
+                    # A inviabilidade física não pode converter uma violação térmica em aprovação.
+                    "operacao_viavel": bool(not ana["inviavel_fisico"]),
+                    "violou_Tcap": bool(sim_ana["max_T_die_K"] > Tcap_K + 1e-3),
+                    "respeitou_Tcap": bool(sim_ana["max_T_die_K"] <= Tcap_K + 1e-3),
+                    "status_operacao_viavel": (
+                        "not_applicable" if ana["inviavel_fisico"] else
+                        ("pass" if sim_ana["max_T_die_K"] <= Tcap_K + 1e-3 else "fail")
                     ),
                 },
             },
