@@ -56,7 +56,7 @@ jobs:
       - name: Install TeX toolchain
         run: |
           sudo apt-get update
-          sudo apt-get install -y latexmk texlive-latex-recommended texlive-latex-extra texlive-fonts-recommended texlive-bibtex-extra
+          sudo apt-get install -y latexmk texlive-latex-recommended texlive-latex-extra texlive-fonts-recommended texlive-bibtex-extra texlive-publishers
       - name: Compile Elsevier manuscript
         working-directory: docs/elsevier
         run: latexmk -pdf -interaction=nonstopmode -halt-on-error main.tex
