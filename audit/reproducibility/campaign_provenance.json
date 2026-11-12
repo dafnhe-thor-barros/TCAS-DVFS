@@ -1,6 +1,6 @@
 {
   "project": "TCAS-DVFS: Thermal-Crosstalk-Aware Scheduling and Model Predictive DVFS for Spaceborne AI",
-  "timestamp_utc": "2026-11-12T06:17:40.508776+00:00",
+  "timestamp_utc": "2026-11-12T15:36:17.789137+00:00",
   "environment": {
     "python_version": "3.14.6",
     "python_executable": "C:\\Python314\\python.exe",
@@ -16,8 +16,8 @@
     "repository": "https://github.com/dafnhe-thor-barros/TCAS-DVFS",
     "baseline_frozen_tag": "audit-baseline-a8027ee",
     "baseline_frozen_commit": "a8027ee943659c61a09f3abb7043e22b89e74941",
-    "code_commit_hash": "3e8fb1ced4ed0b6c6665168c82beec8123ba74f1",
-    "git_commit_hash": "3e8fb1ced4ed0b6c6665168c82beec8123ba74f1",
+    "code_commit_hash": "59342f9873486990081813cf21edff629bf0cc80",
+    "git_commit_hash": "59342f9873486990081813cf21edff629bf0cc80",
     "provenance_note": "code_commit_hash e git_commit_hash registram exatamente o commit do código-fonte e dos testes de auditoria (Fases 0 a 6) com o qual todos os artefatos experimentais desta campanha foram gerados."
   },
   "simulation_parameters": {
