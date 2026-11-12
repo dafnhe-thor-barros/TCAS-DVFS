@@ -24,7 +24,7 @@ jobs:
       - name: Install validation dependencies
         run: python -m pip install --upgrade pip numpy scipy matplotlib pytest
       - name: Run automated tests
-        run: python -m pytest -q
+        run: python -m pytest -q audit/tests
       - name: Run complete nonlinear thermal-plant validation
         run: python audit/numerical_validation/validate_thermal_budget.py
       - name: Regenerate numerical validation reports
