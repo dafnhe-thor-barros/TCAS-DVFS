@@ -15,10 +15,10 @@ Executa:
    - Fechamento do orçamento admissível:
        P_budget = min(P_cond,max, Q_rad,emit - q_m + P_buffer)  [W]
 
-2. A10 (proxy numérico): Comparação exploratória entre o orçamento analítico e uma integração
-   Heun de 5 estados com injeção térmica constante distribuída igualmente entre os dies.
-   Esta integração NÃO recalcula potência dinâmica e fuga em função de T e f e, portanto,
-   NÃO representa a planta eletrotérmica completa nem valida o controlador TCAS-DVFS. Regimes:
+2. A10: Comparação exploratória do orçamento analítico com integração Heun da CTM
+   não linear completa via C.deriv(). Potência dinâmica e fuga são recalculadas
+   a cada estágio usando temperatura e frequência instantâneas. O ensaio mantém
+   frequência uniforme e atividade constantes por cenário; não simula o MPC. Regimes:
    (1) Regime estacionário
    (2) Aquecimento transitório
    (3) Resfriamento
@@ -94,51 +94,79 @@ def calcular_orcamento_analitico(xh, al, qm, t_cap=83.0, tau_horiz=240.0, par=C.
     }
 
 
-def simular_horizonte_ode_injecao_constante(xh0, P_alvo_total, qext_serie, dt=0.5, par=C.NOM):
-    """Integração Heun com injeção térmica constante e uniforme nos quatro dies.
+def simular_horizonte_planta_completa(xh0, f_cmd, al, qext_serie, dt=0.5, par=C.NOM):
+    """Integra a CTM não linear completa de cinco estados pelo método de Heun.
 
-    Esta função é um proxy térmico: não chama C.deriv() e não recalcula potência
-    dinâmica/fuga em função da temperatura e da frequência. Não deve ser descrita
-    como integração da planta eletrotérmica completa.
+    Em cada avaliação de C.deriv(), potência dinâmica e fuga são recalculadas
+    com a temperatura instantânea e o comando de frequência. A atividade e o
+    comando de frequência permanecem constantes em cada cenário; qext pode variar.
+    Trata-se de ensaio open-loop da planta, não de simulação do controlador MPC.
     """
-    x = xh0.copy().astype(float)
-    nt = len(qext_serie)
-    p_per_die = np.full(4, P_alvo_total / 4.0)
+    x = np.asarray(xh0, dtype=float).copy()
+    f_cmd = np.asarray(f_cmd, dtype=float)
+    al = np.asarray(al, dtype=float)
+    if x.shape != (5,) or f_cmd.shape != (4,) or al.shape != (4,):
+        raise ValueError("Dimensões inválidas: xh0(5), f_cmd(4), al(4) esperados.")
+    if not np.isfinite(x).all() or not np.isfinite(f_cmd).all() or not np.isfinite(al).all():
+        raise ValueError("Estados, frequências e atividades devem ser finitos.")
+    if dt <= 0 or len(qext_serie) == 0:
+        raise ValueError("dt deve ser positivo e qext_serie não pode ser vazio.")
+
     max_T_die = float(x[:4].max())
-
-    def deriv_p_fixo(X, qext_val):
-        T = X[:4]
-        tr = X[4]
-        qr = (T - tr) / par["RR"]
-        d = np.empty(5)
-        d[:4] = (p_per_die - par["LAP"] @ T - qr) / par["C"]
-        d[4] = (qr.sum() + qext_val - C.EPS * C.SIGMA * C.A_RAD * (tr ** 4 - C.T_SPACE ** 4)) / par["CRAD"]
-        return d
-
-    for k in range(nt):
-        qk = float(qext_serie[k])
-        d1 = deriv_p_fixo(x, qk)
+    max_Trad = float(x[4])
+    p_sum = 0.0
+    p_peak = 0.0
+    for k, qext_val in enumerate(qext_serie):
+        qk = float(qext_val)
+        d1, p1, _ = C.deriv(x, f_cmd, al, qk, par)
         x_pred = x + dt * d1
-        qk_next = float(qext_serie[min(k + 1, nt - 1)])
-        d2 = deriv_p_fixo(x_pred, qk_next)
+        qk_next = float(qext_serie[min(k + 1, len(qext_serie) - 1)])
+        d2, p2, _ = C.deriv(x_pred, f_cmd, al, qk_next, par)
         x = x + 0.5 * dt * (d1 + d2)
+        if not np.isfinite(x).all():
+            raise FloatingPointError(f"Estado não finito durante integração no passo {k}.")
         max_T_die = max(max_T_die, float(x[:4].max()))
+        max_Trad = max(max_Trad, float(x[4]))
+        p_sum += 0.5 * (float(np.sum(p1)) + float(np.sum(p2))) * dt
+        p_peak = max(p_peak, float(np.sum(p1)), float(np.sum(p2)))
 
+    duration = len(qext_serie) * dt
     return {
         "max_T_die_K": max_T_die,
+        "max_Trad_K": max_Trad,
         "final_T_die_mean_K": float(x[:4].mean()),
         "final_Trad_K": float(x[4]),
+        "P_media_W": float(p_sum / duration),
+        "P_pico_W": float(p_peak),
+        "duracao_s": float(duration),
     }
 
 
-def orcamento_numerico_ode_proxy(xh0, Trad_max_K, Tcap_K, qext_serie, dt=0.5, par=C.NOM):
-    """
-    Encontra por bisseção sobre a integração numérica não linear de Heun da EDO de 5 estados
-    a potência total constante máxima P_ode_max [W] no horizonte de 240 s tal que:
-      1) max_{t in [0, 240s]} max_i T_i(t) <= Tcap_K (restrição de condução/temperatura nos dies)
-      2) T_rad(240 s) <= Trad_est + (Trad_max_K - Trad_est) * (1 - exp(-tau_horiz/tau_rad))
-         (mesma meta de excursão máxima admitida para o radiador no horizonte de controle).
-    Também calcula P_ode_cap_only (limitado apenas por max_i T_i(t) <= Tcap_K em 240 s).
+def frequencia_uniforme_para_potencia(xh, al, p_alvo, par=C.NOM):
+    """Encontra frequência uniforme cujo consumo inicial se aproxima de p_alvo."""
+    p_min = float(sum(C.potencias(xh[:4], np.full(4, C.F_MIN), al)))
+    p_max = float(sum(C.potencias(xh[:4], np.full(4, C.F_MAX), al)))
+    if p_alvo <= p_min:
+        return float(C.F_MIN)
+    if p_alvo >= p_max:
+        return float(C.F_MAX)
+    lo, hi = float(C.F_MIN), float(C.F_MAX)
+    for _ in range(60):
+        mid = 0.5 * (lo + hi)
+        p_mid = float(sum(C.potencias(xh[:4], np.full(4, mid), al)))
+        if p_mid <= p_alvo:
+            lo = mid
+        else:
+            hi = mid
+    return 0.5 * (lo + hi)
+
+
+def orcamento_numerico_planta_completa(xh0, Trad_max_K, Tcap_K, al, qext_serie,
+                                       dt=0.5, par=C.NOM):
+    """Busca por bisseção a maior frequência uniforme que respeita os limites CTM.
+
+    O teste integra a planta não linear completa com C.deriv(). A restrição
+    radiador é aplicada ao valor final do horizonte, conforme a meta analítica.
     """
     tau_horiz = len(qext_serie) * dt
     tau_rad = float(par["CRAD"] * par["RR"] / 4.0)
@@ -148,30 +176,33 @@ def orcamento_numerico_ode_proxy(xh0, Trad_max_K, Tcap_K, qext_serie, dt=0.5, pa
     else:
         Trad_target = Trad_est
 
-    # Bisseção 1: Respeitando simultaneamente T_die <= Tcap_K e T_rad(240s) <= Trad_target
-    lo, hi = 0.0, 200.0
+    def avaliar(f):
+        return simular_horizonte_planta_completa(
+            xh0, np.full(4, f), al, qext_serie, dt=dt, par=par
+        )
+
+    lo, hi = float(C.F_MIN), float(C.F_MAX)
     for _ in range(45):
         mid = 0.5 * (lo + hi)
-        sim = simular_horizonte_ode_injecao_constante(xh0, mid, qext_serie, dt=dt, par=par)
+        sim = avaliar(mid)
         if sim["max_T_die_K"] <= Tcap_K and sim["final_Trad_K"] <= Trad_target:
             lo = mid
         else:
             hi = mid
-    p_ode_acoplado = 0.5 * (lo + hi)
+    f_acoplada = 0.5 * (lo + hi)
+    sim_acoplada = avaliar(f_acoplada)
 
-    # Bisseção 2: Respeitando apenas max_i T_i(t) <= Tcap_K no horizonte de 240 s
-    lo2, hi2 = 0.0, 200.0
+    lo2, hi2 = float(C.F_MIN), float(C.F_MAX)
     for _ in range(45):
         mid = 0.5 * (lo2 + hi2)
-        sim = simular_horizonte_ode_injecao_constante(xh0, mid, qext_serie, dt=dt, par=par)
+        sim = avaliar(mid)
         if sim["max_T_die_K"] <= Tcap_K:
             lo2 = mid
         else:
             hi2 = mid
-    p_ode_tcap = 0.5 * (lo2 + hi2)
-
-    return p_ode_acoplado, p_ode_tcap, Trad_target
-
+    f_tcap = 0.5 * (lo2 + hi2)
+    sim_tcap = avaliar(f_tcap)
+    return f_acoplada, sim_acoplada, f_tcap, sim_tcap, Trad_target
 
 def main():
     print("=" * 78)
@@ -248,30 +279,40 @@ def main():
         al = c["al"]
 
         ana = calcular_orcamento_analitico(xh, al, qm, t_cap=t_cap, tau_horiz=tau_horiz)
-        p_ode_acop, p_ode_tcap, trad_target = orcamento_numerico_ode_proxy(
-            xh, ana["Trad_max_K"], Tcap_K, qext_s, dt=dt
+        f_ode_acop, sim_ode_acop, f_ode_tcap, sim_ode_tcap, trad_target = orcamento_numerico_planta_completa(
+            xh, ana["Trad_max_K"], Tcap_K, al, qext_s, dt=dt
         )
 
         # Simula a EDO aplicando exatamente o orçamento analítico (ou P_min_cores em contingência)
         p_aplicado = ana["P_min_cores_W"] if ana["inviavel_fisico"] else ana["P_budget_analitico_W"]
-        sim_ana = simular_horizonte_ode_injecao_constante(xh, p_aplicado, qext_s, dt=dt)
+        f_aplicada = frequencia_uniforme_para_potencia(xh, al, p_aplicado)
+        sim_ana = simular_horizonte_planta_completa(
+            xh, np.full(4, f_aplicada), al, qext_s, dt=dt
+        )
 
-        erro_w = float(ana["P_budget_analitico_W"] - p_ode_acop)
-        erro_rel_pct = float(100.0 * abs(erro_w) / max(p_ode_acop, 1e-6))
-        margem_seguranca_tcap_w = float(p_ode_tcap - ana["P_budget_analitico_W"])
+        erro_w = float(ana["P_budget_analitico_W"] - sim_ode_acop["P_media_W"])
+        erro_rel_pct = float(100.0 * abs(erro_w) / max(sim_ode_acop["P_media_W"], 1e-6))
+        margem_seguranca_tcap_w = float(sim_ode_tcap["P_media_W"] - ana["P_budget_analitico_W"])
 
         resultados_regimes[cid] = {
             "descricao": c["descricao"],
             "analitico": ana,
             "numerico_ode_heun": {
-                "P_ode_acoplado_W": float(p_ode_acop),
-                "P_ode_limite_Tcap_240s_W": float(p_ode_tcap),
+                "f_ode_acoplada_GHz": float(f_ode_acop),
+                "P_ode_acoplado_media_W": float(sim_ode_acop["P_media_W"]),
+                "P_ode_acoplado_pico_W": float(sim_ode_acop["P_pico_W"]),
+                "Tmax_ode_acoplado_C": float(sim_ode_acop["max_T_die_K"] - 273.15),
+                "f_ode_limite_Tcap_GHz": float(f_ode_tcap),
+                "P_ode_limite_Tcap_media_W": float(sim_ode_tcap["P_media_W"]),
                 "Trad_target_240s_K": float(trad_target),
                 "erro_analitico_vs_ode_acoplado_W": erro_w,
                 "erro_relativo_acoplado_pct": erro_rel_pct,
                 "margem_conservadora_ate_violacao_Tcap_W": margem_seguranca_tcap_w,
                 "simulacao_sob_orcamento_analitico": {
-                    "P_aplicado_W": float(p_aplicado),
+                    "P_aplicado_inicial_W": float(p_aplicado),
+                    "f_comando_GHz": float(f_aplicada),
+                    "P_media_planta_W": float(sim_ana["P_media_W"]),
+                    "P_pico_planta_W": float(sim_ana["P_pico_W"]),
                     "max_T_die_240s_C": float(sim_ana["max_T_die_K"] - 273.15),
                     "final_Trad_240s_C": float(sim_ana["final_Trad_K"] - 273.15),
                     # A inviabilidade física não pode converter uma violação térmica em aprovação.
@@ -287,7 +328,7 @@ def main():
         }
         print(
             f"  [{cid:36s}] P_ana={ana['P_budget_analitico_W']:6.2f} W | "
-            f"P_ODE_acop={p_ode_acop:6.2f} W | P_ODE_Tcap={p_ode_tcap:6.2f} W | "
+            f"f_ODE={f_ode_acop:5.3f} GHz | P_ODE={sim_ode_acop['P_media_W']:6.2f} W | "
             f"T_max_sim={sim_ana['max_T_die_K']-273.15:5.2f} C | inviavel={ana['inviavel_fisico']}"
         )
 
@@ -337,7 +378,7 @@ def main():
             {
                 "fase": "Fase 3 - Fechamento Fisico do Orcamento Termico (A09, A10)",
                 "A09_derivacao_e_unidades": derivacao_formal,
-                "A10_validacao_7_regimes_vs_ode": resultados_regimes,
+                "A10_validacao_7_regimes_vs_planta_completa": resultados_regimes,
             },
             f,
             indent=2,
