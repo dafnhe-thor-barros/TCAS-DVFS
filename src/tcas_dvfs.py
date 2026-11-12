@@ -14,6 +14,9 @@ Auditoria Forense e Princípios Físicos (PINN-Oriented):
 - P-05: SDP ADMM com resíduo dual projetado na variedade afim de consenso (E Delta_v = 0).
 - P-06: Trava determinística de segurança de retaguarda formalizada como Deterministic Safety Override (DSO) heurístico de defesa em profundidade.
 """
+import os
+for _env_var in ("OMP_NUM_THREADS", "MKL_NUM_THREADS", "OPENBLAS_NUM_THREADS", "NUMEXPR_NUM_THREADS"):
+    os.environ.setdefault(_env_var, "1")
 import itertools
 import numpy as np
 from tcas_core import (LAP, C_DIE, R_R, EPS, SIGMA, A_RAD, T_SPACE, F_MIN, F_MAX, T_LIM, DT, NOM,
@@ -179,8 +182,16 @@ def fabrica_mpc(hp=30, hc=8, dtc=2.0, t_cap=83.0, w=1.0, Rw=0.2, rho=0.02, lam=2
     par = NOM if par is None else par
     N = 4; nf = hc * N; n_slacks = hp * N; n_vars = nf + n_slacks
     D_ = np.eye(nf) - np.eye(nf, k=-N)
+    DTD = D_.T @ D_
     ar = np.arange(hp); Jt = np.maximum(0, ar[:, None] - ar[None, :]).astype(float)
     st = {"x": None, "y": None}; c = float(par["C"]); RR = float(par["RR"]); Lp = np.asarray(par["LAP"], dtype=float)
+    n_cons = 2 * n_slacks + nf + hc
+    A_tpl = np.zeros((n_cons, n_vars))
+    A_tpl[:n_slacks, nf:] = -np.eye(n_slacks)
+    A_tpl[n_slacks:n_slacks + nf, :nf] = np.eye(nf)
+    A_tpl[n_slacks + nf:2 * n_slacks + nf, nf:] = np.eye(n_slacks)
+    lo_tpl = np.concatenate([np.full(n_slacks, -1e9), np.full(nf, F_MIN), np.zeros(n_slacks), np.full(hc, -1e9)])
+    I_nvars = np.eye(n_vars)
 
     def ptot(T, f, al):
         pd, pl = potencias(T, f, al); return pd + pl
@@ -209,7 +220,7 @@ def fabrica_mpc(hp=30, hc=8, dtc=2.0, t_cap=83.0, w=1.0, Rw=0.2, rho=0.02, lam=2
         # Decisão: x = [f_1..f_nf, s_1..s_n_slacks]^T in R^(nf + n_slacks) = R^152
         # Slacks térmicos individuais desacoplados no espaço e no tempo
         Pm = np.zeros((n_vars, n_vars))
-        Pm[:nf, :nf] = 2 * w * np.eye(nf) + 2 * Rw * (D_.T @ D_) + 2 * rho * (Gh.T @ Gh)
+        Pm[:nf, :nf] = 2 * w * np.eye(nf) + 2 * Rw * DTD + 2 * rho * (Gh.T @ Gh)
         Pm[nf:, nf:] = 2 * lam * np.eye(n_slacks)                               # Penalidade individual dos slacks
         
         e0 = np.zeros(nf); e0[:N] = fp
@@ -217,16 +228,11 @@ def fabrica_mpc(hp=30, hc=8, dtc=2.0, t_cap=83.0, w=1.0, Rw=0.2, rho=0.02, lam=2
         q[:nf] = -2 * w * fnom.reshape(-1) - 2 * Rw * (D_.T @ e0) + 2 * rho * (Gh.T @ fc)
 
         Tc = t_cap + 273.15; fl = free.reshape(-1)
-        # Matriz de restrições: diagonal de slacks desacoplada para cada (die, passo_predição)
-        A1 = np.hstack([Gam, -np.eye(n_slacks)])                                # Gam * f - s_{i,k} <= Tc - fl
-        A2 = np.hstack([np.eye(nf), np.zeros((nf, n_slacks))])                  # Limites de frequência
-        A3 = np.hstack([np.zeros((n_slacks, nf)), np.eye(n_slacks)])            # Limites dos slacks (s >= 0)
-        A4 = np.zeros((hc, n_vars))
+        A = A_tpl.copy()
+        A[:n_slacks, :nf] = Gam
         for j in range(hc):
-            A4[j, j * N:(j + 1) * N] = a                                       # Orçamento de potência por passo de controle
-        
-        A = np.vstack([A1, A2, A3, A4])
-        lo = np.concatenate([np.full(n_slacks, -1e9), np.full(nf, F_MIN), np.zeros(n_slacks), np.full(hc, -1e9)])
+            A[2 * n_slacks + nf + j, j * N:(j + 1) * N] = a
+        lo = lo_tpl.copy()
         up = np.concatenate([Tc - fl, np.full(nf, F_MAX), np.full(n_slacks, 1e3), np.full(hc, pbud - (P0 - a * fp).sum())])
         
         rn = np.abs(A).max(1); rn[rn < 1e-9] = 1.0
@@ -247,7 +253,7 @@ def fabrica_mpc(hp=30, hc=8, dtc=2.0, t_cap=83.0, w=1.0, Rw=0.2, rho=0.02, lam=2
         z = np.clip(A @ x, lo, up)
 
         rho_a = 1.0; sg = 1e-6; al_ = 1.6
-        Kinv = np.linalg.inv(Pm + sg * np.eye(n_vars) + rho_a * (A.T @ A))
+        Kinv = np.linalg.inv(Pm + sg * I_nvars + rho_a * (A.T @ A))
         it = 0; r_pri = 0.0; r_dua = 0.0
         for it in range(iters):                                                  # ADMM estilo OSQP
             z_old = z.copy()
@@ -259,19 +265,20 @@ def fabrica_mpc(hp=30, hc=8, dtc=2.0, t_cap=83.0, w=1.0, Rw=0.2, rho=0.02, lam=2
             y = y + rho_a * (zr - zn)
             x = xr
             z = zn
-            r_pri = float(np.abs(A @ x - z).max())
-            # Resíduo dual exato projetado no espaço primal via A.T (Boyd et al., Stellato et al.)
-            r_dua = float(np.abs(rho_a * (A.T @ (z - z_old))).max())
-            
-            # Critério de parada escalonado estilo OSQP (Stellato et al., 2020)
-            eps_pri = 2e-3 + 1e-3 * max(float(np.abs(A @ x).max()), float(np.abs(z).max()))
-            scale_dua = max(float(np.abs(Pm @ x).max()), float(np.abs(A.T @ y).max()), float(np.abs(q).max()))
-            eps_dua = 5e-3 + 1e-3 * scale_dua
-            
-            if it >= 15 and it % 5 == 4 and r_pri <= eps_pri and r_dua <= eps_dua:
-                break
+            if (it >= 15 and it % 5 == 4) or it == iters - 1:
+                Ax = A @ x
+                r_pri = float(np.abs(Ax - z).max())
+                # Resíduo dual exato projetado no espaço primal via A.T (Boyd et al., Stellato et al.)
+                r_dua = float(np.abs(rho_a * (A.T @ (z - z_old))).max())
+                
+                # Critério de parada escalonado estilo OSQP (Stellato et al., 2020)
+                eps_pri = 2e-3 + 1e-3 * max(float(np.abs(Ax).max()), float(np.abs(z).max()))
+                scale_dua = max(float(np.abs(Pm @ x).max()), float(np.abs(A.T @ y).max()), float(np.abs(q).max()))
+                eps_dua = 5e-3 + 1e-3 * scale_dua
+                
+                if it >= 15 and it % 5 == 4 and r_pri <= eps_pri and r_dua <= eps_dua:
+                    break
 
-        st["x"] = x; st["y"] = y
         Ff = np.clip(x[:nf], F_MIN, F_MAX)
         viol_termica = float(max(0.0, (fl + Gam @ Ff - Tc).max()))
         slack_max = float(np.max(x[nf:]))
@@ -280,6 +287,7 @@ def fabrica_mpc(hp=30, hc=8, dtc=2.0, t_cap=83.0, w=1.0, Rw=0.2, rho=0.02, lam=2
         # Classificação diagnóstica formal e separada
         if np.isnan(x).any() or np.isinf(x).any():
             status = "numerical_failure"
+            convergiu = False
         elif slack_max > 0.5:
             status = "soft_constraint_violation"
         elif convergiu:
@@ -289,6 +297,9 @@ def fabrica_mpc(hp=30, hc=8, dtc=2.0, t_cap=83.0, w=1.0, Rw=0.2, rho=0.02, lam=2
         else:
             status = "suboptimal"
 
+        if status != "numerical_failure":
+            st["x"] = x; st["y"] = y
+
         return Ff.reshape(hc, N), {
             "it": it + 1,
             "viol": viol_termica,
@@ -296,7 +307,9 @@ def fabrica_mpc(hp=30, hc=8, dtc=2.0, t_cap=83.0, w=1.0, Rw=0.2, rho=0.02, lam=2
             "converged": convergiu,
             "status": status,
             "r_pri": r_pri,
-            "r_dua": r_dua
+            "r_dua": r_dua,
+            "eps_pri": eps_pri,
+            "eps_dua": eps_dua
         }
     return resolver
 
@@ -325,10 +338,49 @@ def gov_tcas_dvfs(usa_sched=True, usa_mpc=True, hp=30, hc=8, ksub=None, dt=DT, s
     Hc_ = np.eye(N) - np.ones((N, N)) / N
     Psi = Phi @ Hc_ @ Phi
 
-    s = {"perm": np.arange(N), "f": None, "fcmd": None}
+    s = {"perm": np.arange(N), "f": None, "fcmd": None, "F_conv": None, "k_since_conv": 0}
     info = {"perm": np.arange(N), "n_mpc": 0, "qp_it": 0, "viol_max": 0.0, "viol_sum": 0.0,
-            "n_barreira": 0, "n_sched": 0, "n_inviavel_qp": 0, "n_deficit_orcamento": 0,
-            "n_contingencia_inviavel": 0, "deficit_max_w": 0.0, "gap": [], "hit": []}
+            "n_barreira": 0, "n_sched": 0, "n_converged_qp": 0, "n_inviavel_qp": 0,
+            "n_max_iter_qp": 0, "n_numerical_fail_qp": 0, "n_fallback_mpc": 0,
+            "Tmax_fallback_C": 0.0, "r_pri_max_falha": 0.0, "r_dua_max_falha": 0.0,
+            "n_deficit_orcamento": 0, "n_contingencia_inviavel": 0, "deficit_max_w": 0.0,
+            "gap": [], "hit": []}
+
+    def _fallback_nao_convergente(F_cand, dg, xh, fp, al, fnk, pbud, P_min_cores):
+        """
+        Política determinística explícita de segurança para saída não convergente do ADMM:
+        1. Se houver falha numérica (NaN/Inf) ou resíduo primal degradado (r_pri > 5e-2),
+           descarta o iterado e recupera a cauda deslocada da última trajetória convergente F_conv (ou fp).
+           Caso contrário (max_iter com quase-viabilidade primal r_pri <= 5e-2), extrai F_cand[0]
+           e aplica a projeção determinística de segurança física abaixo.
+        2. Impõe derating térmico preventivo se qualquer die estimado exceder t_bar - 0.5 K (84.0 °C).
+        3. Projeta analiticamente o vetor de frequências para satisfazer estritamente
+           o orçamento físico não linear de potência P_bud(k) e os limites [F_MIN, min(F_MAX, fnk)].
+        """
+        if dg.get("status") == "numerical_failure" or float(dg.get("r_pri", 1.0)) > 5e-2:
+            if s["F_conv"] is not None:
+                idx_tail = min(s["k_since_conv"], hc - 1)
+                f_cand = s["F_conv"][idx_tail].copy()
+            else:
+                f_cand = fp.copy()
+        else:
+            f_cand = F_cand[0].copy()
+        f_cand = np.clip(f_cand, F_MIN, np.minimum(F_MAX, fnk))
+        T_dies_C = xh[:4] - 273.15
+        # Redução preventiva suave se qualquer die estimado exceder t_bar - 0.5 K (84.0 °C)
+        m_warm = T_dies_C > (t_bar - 0.5)
+        if m_warm.any():
+            fator_t = np.clip((t_bar - T_dies_C) / max(1e-6, t_bar - t_cap), 0.15, 1.0)
+            f_t = F_MIN + fator_t * (f_cand - F_MIN)
+            f_cand = np.where(m_warm, np.minimum(f_cand, f_t), f_cand)
+        # Projeção fechada no orçamento físico de potência P_bud(k)
+        pd_c, pl_c = potencias(xh[:4], f_cand, al)
+        P_cand = float((pd_c + pl_c).sum())
+        if P_cand > pbud + 1e-6 and P_cand > P_min_cores + 1e-9:
+            frac = max(0.0, min(1.0, (pbud - P_min_cores) / (P_cand - P_min_cores)))
+            # Como P_dyn ~ V^2 f é convexa e monótona em f, escalonamento linear garante P(f_fb) <= P_bud
+            f_cand = F_MIN + frac * (f_cand - F_MIN)
+        return np.clip(f_cand, F_MIN, F_MAX)
 
     def acao(k, y, sc):
         cur_dt = sc["dt"]
@@ -406,13 +458,29 @@ def gov_tcas_dvfs(usa_sched=True, usa_mpc=True, hp=30, hc=8, ksub=None, dt=DT, s
                 s["fcmd"] = np.full(N, F_MIN)
                 info["n_mpc"] += 1
                 info["n_inviavel_qp"] += 1
+                info["n_fallback_mpc"] += 1
+                info["Tmax_fallback_C"] = max(info["Tmax_fallback_C"], float((xh[:4] - 273.15).max()))
             else:
                 F, dg = mpc(xh, fp, al, fnom, slope, P_budget_fisico)
-                s["fcmd"] = F[0]
                 info["n_mpc"] += 1; info["qp_it"] += dg["it"]
                 info["viol_max"] = max(info["viol_max"], dg["viol"]); info["viol_sum"] += dg["viol"]
-                if not dg.get("converged", True):
+                if dg.get("converged", True):
+                    s["fcmd"] = F[0]
+                    s["F_conv"] = F.copy()
+                    s["k_since_conv"] = 0
+                    info["n_converged_qp"] += 1
+                else:
                     info["n_inviavel_qp"] += 1
+                    if dg.get("status") == "numerical_failure":
+                        info["n_numerical_fail_qp"] += 1
+                    else:
+                        info["n_max_iter_qp"] += 1
+                    info["n_fallback_mpc"] += 1
+                    s["k_since_conv"] += 1
+                    s["fcmd"] = _fallback_nao_convergente(F, dg, xh, fp, al, fnk, P_budget_fisico, P_min_cores)
+                    info["Tmax_fallback_C"] = max(info["Tmax_fallback_C"], float((xh[:4] - 273.15).max()))
+                    info["r_pri_max_falha"] = max(info["r_pri_max_falha"], float(dg.get("r_pri", 0.0)))
+                    info["r_dua_max_falha"] = max(info["r_dua_max_falha"], float(dg.get("r_dua", 0.0)))
 
         if not usa_mpc:
             s["fcmd"] = fnk

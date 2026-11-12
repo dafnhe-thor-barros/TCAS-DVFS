@@ -75,6 +75,10 @@ def main():
         "audit/sdp/sdp_validation_report.json",
         "audit/numerical_validation/ekf_jacobian_dso_report.json",
         "audit/numerical_validation/reliability_validation.json",
+        "docs/elsevier/main.tex",
+        "docs/elsevier/main.pdf",
+        "docs/elsevier/highlights.txt",
+        "docs/elsevier/cover_letter.tex",
     ]
 
     checksums = {}
@@ -155,7 +159,7 @@ def main():
             "results/amostras.csv": "Matriz de 30 amostras de amostragem por hipercubo latino (LHS, +-20%)",
             "results/resumo_incerteza.csv": "Intervalos de confiança t-Student e bootstrap (B=4000) da campanha de incerteza",
             "results/spearman.csv": "Correlações de postos de Spearman entre parâmetros térmicos e métricas",
-            "results/incerteza.json": "Resultados completos da campanha de incerteza paramétrica e Clopper-Pearson",
+            "results/incerteza.json": "Resultados completos da campanha descritiva de sensibilidade paramétrica estratificada (LHS, n=30)",
             "results/convergencia_temporal.csv": "Avaliação do erro numérico com dt in [1.0, 0.5, 0.25, 0.125] s",
             "results/convergencia_temporal.json": "Métricas detalhadas de convergência temporal com dt_MPC=2.0s e dt_SDP=120.0s invariantes",
             "results/fig_validacao_pinn.png": "Curvas de validação out-of-sample da PINN térmica vs MLP supervisionada e ground truth Heun",

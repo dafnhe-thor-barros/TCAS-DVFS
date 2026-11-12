@@ -1,14 +1,14 @@
 Highlights for Control Engineering Practice:
 
 - Non-linear CTM network and EKF state estimation under deep orbital vacuum.
-- Constrained LTV MPC-DVFS via warm-started ADMM solves thermal crosstalk.
-- Dynamic radiative power budgeting derived from predicted orbital flux.
-- 3-orbit simulation exhibits zero threshold violations and 78.7% gradient drop.
-- LHS robustness (n=30) demonstrates reliable containment under uncertainty.
+- LTV MPC-DVFS with soft thermal cap and explicit fallback damps crosstalk.
+- Dynamic radiative power budgeting derived from Fourier-enthalpy balance.
+- 3-orbit simulation exhibits zero 85 C violations and 78.7% gradient drop.
+- Stratified LHS sensitivity (n=30) shows zero violations in +-20% range.
 
 Verification of Character Length (including spaces, maximum allowed is 85):
 Point 1: 75 characters [OK]
-Point 2: 73 characters [OK]
-Point 3: 71 characters [OK]
-Point 4: 79 characters [OK]
-Point 5: 76 characters [OK]
+Point 2: 74 characters [OK]
+Point 3: 73 characters [OK]
+Point 4: 74 characters [OK]
+Point 5: 72 characters [OK]

@@ -8,6 +8,8 @@ import argparse
 import csv
 import json
 import os
+for _env_var in ("OMP_NUM_THREADS", "MKL_NUM_THREADS", "OPENBLAS_NUM_THREADS", "NUMEXPR_NUM_THREADS"):
+    os.environ.setdefault(_env_var, "1")
 import sys
 import time
 from multiprocessing import Pool, cpu_count

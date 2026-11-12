@@ -10,7 +10,7 @@
 \usepackage{amsmath,amssymb,amsfonts}
 \usepackage{booktabs}
 \usepackage{graphicx}
-\graphicspath{{figuras/}{../figuras/}}
+\graphicspath{{../../figuras/}{../figuras/}{figuras/}{./}}
 \usepackage{array}
 \usepackage{multirow}
 \usepackage{url}
@@ -57,15 +57,15 @@
 % Highlights (3-5 points, max 85 characters per point)
 \begin{highlights}
 \item Non-linear CTM network and EKF state estimation under deep orbital vacuum.
-\item Constrained LTV MPC-DVFS via warm-started ADMM solves thermal crosstalk.
+\item LTV MPC-DVFS with soft thermal cap and explicit fallback damps crosstalk.
 \item Dynamic radiative power budgeting derived from Fourier-enthalpy balance.
-\item 3-orbit simulation exhibits zero threshold violations and 78.7\% gradient drop.
-\item LHS robustness ($n=30$) demonstrates reliable containment under uncertainty.
+\item 3-orbit simulation exhibits zero 85 C violations and 78.7\% gradient drop.
+\item Stratified LHS sensitivity ($n=30$) shows zero violations in $\pm20\%$ range.
 \end{highlights}
 
 % Abstract
 \begin{abstract}
-High-density heterogeneous artificial intelligence (AI) computing clusters onboard small satellites in Low Earth Orbit (LEO) face severe electrothermal constraints. Gas-mediated convective heat transfer is neglected in the adopted high-vacuum model ($h \approx 0$), confining thermal rejection exclusively to internal solid conduction and non-linear Stefan-Boltzmann radiation to deep space ($q \propto T^4$). In multi-chip modules (MCM), heavy neural inference workloads induce severe lateral conductive coupling between adjacent silicon dies (\textit{thermal crosstalk}). This paper investigates a model-based predictive thermal management strategy, denoted \textbf{TCAS-DVFS} (\textit{Thermal-Crosstalk-Aware Scheduling and Model Predictive Dynamic Voltage and Frequency Scaling}), formulated from lumped thermodynamic principles for multi-die spaceborne accelerators. The proposed architecture integrates: (i) real-time state estimation via an Extended Kalman Filter (EKF) operating over a non-linear $5\times5$ Compact Thermal Model (CTM) with exact analytical subthreshold leakage and radiative Jacobians; (ii) a discrete linear time-varying Model Predictive Controller (LTV MPC-DVFS) with decoupled spatio-temporal thermal slacks solved via a warm-started ADMM splitting iteration; (iii) a physical radiative and conductive power-budget closure with transient enthalpy buffering derived from orbital ephemerides; and (iv) a topological task allocator relaxed over the semidefinite cone $\mathbb{S}_+^{17}$ via Semidefinite Programming (SDP). In a three-orbit numerical co-simulation of a 500-km circular LEO scenario (17,004.0~s, 34,009 time samples, 4 processing dies), TCAS-DVFS produced zero observed junction temperature violations above the 85~$^\circ$C threshold ($0\text{ s}$ versus 200.5~s for binary Thermal Throttling at 85/75~$^\circ$C and 14.0~s for Space-PID), attenuated peak inter-die thermal gradients by 78.7\% (reducing from 9.42 to 2.01~K, and mean gradients by 83.1\% from 5.26 to 0.89~K), and maintained an aggregate throughput of 124.62~FPS with an energy-delay product proxy ($E_{t_{\mathrm{frame}}}$) of 7.452~kJ$\cdot$s/frame. Functional ablation indicates a dominant contribution from the predictive control formulation in damping gradients and bounding temperatures, whereas topological SDP scheduling achieves 100\% exact discrete permutation recovery ($142/142$ epochs) but provides limited net thermal benefit in compact symmetric arrangements ($N=4$ dies). Sensitivity was evaluated under a 30-sample Latin Hypercube Sampling (LHS) stress-test envelope ($\pm20\%$ parameter variation), yielding zero observed violations with an exact 95\% Clopper-Pearson one-sided upper confidence bound of 9.50\% (two-sided 11.57\%), where die-to-radiator thermal resistance ($R_r$) exhibited the strongest monotonic association with $T_{\max}$ (Spearman $\rho = +0.995$). Indicative reliability proxy analyses demonstrate that electromigration yields no net life extension (relative Black damage ratios of 0.97 and 0.83), whereas cyclic thermal stress severity is substantially damped. The reported evidence is limited to numerical simulation of the stated lumped-parameter model and does not constitute hardware or flight qualification.
+High-density heterogeneous artificial intelligence (AI) computing clusters onboard small satellites in Low Earth Orbit (LEO) face severe electrothermal constraints. Gas-mediated convective heat transfer is neglected in the adopted high-vacuum model ($h \approx 0$), confining thermal rejection exclusively to internal solid conduction and non-linear Stefan-Boltzmann radiation to deep space ($q \propto T^4$). In multi-chip modules (MCM), heavy neural inference workloads induce severe lateral conductive coupling between adjacent silicon dies (\textit{thermal crosstalk}). This paper investigates a model-based predictive thermal management strategy, denoted \textbf{TCAS-DVFS} (\textit{Thermal-Crosstalk-Aware Scheduling and Model Predictive Dynamic Voltage and Frequency Scaling}), formulated from lumped thermodynamic principles for multi-die spaceborne accelerators. The proposed architecture integrates: (i) online state estimation at the simulated sampling rate via an Extended Kalman Filter (EKF) operating over a non-linear $5\times5$ Compact Thermal Model (CTM) with exact analytical subthreshold leakage and radiative Jacobians; (ii) a discrete linear time-varying Model Predictive Controller (LTV MPC-DVFS) that penalizes violations of a nominal 83~$^\circ$C soft thermal cap via decoupled spatio-temporal slack variables, solved via a warm-started ADMM splitting iteration paired with an explicit shifted-tail power-projected fallback for non-convergent iterations; (iii) a physical radiative and conductive power-budget closure with transient enthalpy buffering derived from a synthetic analytical orbital radiative forcing model; and (iv) a topological task allocator relaxed over the semidefinite cone $\mathbb{S}_+^{17}$ via Semidefinite Programming (SDP). In a three-orbit numerical co-simulation of a 500-km circular LEO scenario (17,004.0~s, 34,009 time samples, 4 processing dies), TCAS-DVFS produced zero observed junction temperature violations above the adopted 85~$^\circ$C simulation thermal limit ($0\text{ s}$ versus 200.5~s for binary Thermal Throttling at 85/75~$^\circ$C and 14.0~s for Space-PID), attenuated peak inter-die thermal gradients by 78.7\% (reducing from 9.42 to 2.01~K, and mean gradients by 83.1\% from 5.26 to 0.89~K), and maintained an aggregate throughput of 124.62~FPS with an energy-delay product proxy ($E_{t_{\mathrm{frame}}}$) of 7.452~kJ$\cdot$s/frame. Functional ablation indicates a dominant contribution from the predictive control formulation in damping gradients and bounding temperatures, whereas topological SDP scheduling matches the best discrete permutation among the $4! = 24$ candidates after hyperplane rounding ($142/142$ epochs) despite partial ADMM numerical convergence, providing limited net thermal benefit in compact symmetric arrangements ($N=4$ dies). Descriptive parametric sensitivity was evaluated under a 30-sample stratified Latin Hypercube Sampling (LHS) campaign ($\pm20\%$ perturbation across the four conductive and capacitive network parameters $R_{ij}$, $R_r$, $c_i$, and $C_{rad}$), yielding zero observed violations ($0/30$ samples $>85~^\circ$C), where die-to-radiator thermal resistance ($R_r$) exhibited the strongest monotonic association with $T_{\max}$ (Spearman $\rho = +0.995$). Indicative reliability proxy analyses demonstrate that electromigration yields no net life extension (relative Black damage ratios of 0.97 and 0.83), whereas cyclic thermal stress severity is substantially damped. The reported evidence is limited to numerical simulation of the stated lumped-parameter model and does not constitute hardware or flight qualification.
 \end{abstract}
 
 \begin{keywords}
@@ -80,7 +80,7 @@ Control applications \sep Model predictive control \sep Thermal crosstalk \sep D
 \subsection{Orbital Edge Computing and Spaceborne AI}
 Modern Earth Observation (EO) satellite missions, including wildfire monitoring, maritime surveillance, disaster response, and Synthetic Aperture Radar (SAR) imaging, produce massive data streams operating at multi-gigabit-per-second rates in Low Earth Orbit (LEO)~\citep{denby2020asplos, garrett2024taes, chen2026sagin, ortiz2024spirit}. Traditionally, remote sensing platforms have relied on the conventional \textit{store-and-forward} architecture, wherein raw payload data are captured, buffered in solid-state recorders, and downlinked during brief 8-to-12-minute ground-station passes per orbit. This approach incurs severe latency penalties, frequently exceeding 4 to 12 hours~\citep{denby2020asplos, garrett2024taes}.
 
-Edge artificial intelligence (AI) onboard small satellites mitigates this downlink bottleneck by processing, compressing, and triaging sensor data directly in orbit using commercial off-the-shelf (COTS) neural accelerators, multicore ARM CPUs, and embedded GPUs~\citep{garrett2024taes, sherwood2003ase}. In particular, automated on-orbit cloud segmentation enables the autonomous discarding of up to 67\% of optically obstructed imagery prior to transmission~\citep{king2013spatial}, thereby conserving scarce communication bandwidth for high-priority mission products~\citep{giuffrida2021phisat1}.
+Edge artificial intelligence (AI) onboard small satellites mitigates this downlink bottleneck by processing, compressing, and triaging sensor data directly in orbit using commercial off-the-shelf (COTS) neural accelerators, multicore ARM CPUs, and embedded GPUs~\citep{garrett2024taes, sherwood2003ase}. Because global satellite observations indicate that cloud cover obscures approximately 67\% of the Earth's surface on average~\citep{king2013spatial}, automated onboard cloud-detection models such as CloudScout on $\Phi$-Sat-1 screen and filter out cloud-obstructed scenes (e.g., discarding images exceeding 70\% cloudiness) prior to transmission, conserving scarce communication bandwidth for actionable mission products~\citep{giuffrida2021phisat1}.
 
 \subsection{Deep Vacuum Thermodynamics and Thermal Crosstalk}
 Unlike terrestrial data centers that leverage forced air convection ($h \approx 20$--$100\text{ W/(m}^2\text{K)}$) or pumped liquid cooling loops ($h \approx 1,000$--$10,000\text{ W/(m}^2\text{K)}$)~\citep{incropera2011fundamentals}, small spacecraft operating in the high vacuum of LEO ($P < 10^{-4}\text{ Pa}$, free molecular flow with Knudsen number $Kn \gg 10$)~\citep{gilmore2002handbook} exhibit negligible convective gas exchange. Consequently, gas-mediated convective heat transfer is neglected in the adopted high-vacuum model ($h \approx 0$). Thermal rejection from energized silicon junctions is restricted to two coupled mechanisms~\citep{ecss2008thermal, gilmore2002handbook}:
@@ -107,9 +107,9 @@ The pioneering work of \citet{chen2026hotai} established thermal-crosstalk-aware
 To address this question through model-based numerical simulation, this paper presents the following contributions and findings within the scope of the modeled multi-physics system:
 \begin{enumerate}
 \item \textbf{Non-linear State-Space Electrothermal Modeling:} we formulate a $5\times5$ compact thermal network (CTM) capturing conductive coupling matrices, linearized Stefan-Boltzmann radiator dynamics, and non-linear subthreshold leakage positive feedback, integrated with an Extended Kalman Filter (EKF) observer under stochastic sensor noise.
-\item \textbf{Constrained Predictive Control (LTV MPC-DVFS):} we formulate a discrete linear time-varying Model Predictive Controller that solves a condensed quadratic programming problem via a warm-started ADMM-style splitting iteration, coordinating operating frequencies to track inference workloads, enforce a nominal 83~$^\circ$C limit, and suppress spatial gradients.
-\item \textbf{Orbital Radiative Power Budget Surrogate:} we derive a predictive moving-average budget for solar flux, terrestrial albedo, and Earth infrared radiation to establish a temperature-referenced power envelope under eclipse transitions.
-\item \textbf{Numerical Robustness and Methodological Demarcation:} we execute a three-orbit numerical co-simulation, functional ablation, a 30-sample Latin Hypercube Sampling (LHS) stress-test campaign with exact Clopper-Pearson coverage bounds, and physics-of-failure reliability proxy evaluations.
+\item \textbf{Constrained Predictive Control (LTV MPC-DVFS):} we formulate a discrete linear time-varying Model Predictive Controller that solves a condensed quadratic programming problem via a warm-started ADMM-style splitting iteration with an explicit safe fallback policy for non-convergent updates, coordinating operating frequencies to track inference workloads, penalize violations of a nominal 83~$^\circ$C soft thermal cap, and suppress spatial gradients.
+\item \textbf{Orbital Radiative-Conductive Power Budget Closure:} we derive a coupled Fourier-conduction and radiator-enthalpy power budget driven by a synthetic analytical orbital radiative forcing model to establish a temperature-referenced power envelope across eclipse transitions.
+\item \textbf{Numerical Sensitivity and Methodological Demarcation:} we execute a three-orbit numerical co-simulation, functional ablation, a descriptive 30-sample stratified Latin Hypercube Sampling (LHS) sensitivity analysis across the four passive conductive and capacitive network parameters ($R_{ij}, R_r, c_i, C_{rad}$), and physics-of-failure reliability proxy evaluations.
 \end{enumerate}
 
 To ensure complete methodological transparency, Table~\ref{tab:demarcacao} establishes the explicit demarcation between input assumptions, synthetic drivers, calculated simulation states, evaluated proxies, and physically unmeasured quantities.
@@ -141,7 +141,7 @@ The remainder of this article is organized as follows: Section~\ref{sec:env} pre
 
 \begin{figure}
 \centering
-\includegraphics[width=0.98\columnwidth]{figuras/Gemini_Generated_Image_Figura01.jpg}
+\includegraphics[width=0.98\columnwidth]{Gemini_Generated_Image_Figura01.jpg}
 \caption{Synthetic 500~km circular LEO orbital geometry (Sun-Synchronous Orbit inclination $i \approx 97.4^\circ$, solar beta angle $\beta = 0^\circ$): direct solar flux, Earth albedo, terrestrial infrared emission, eclipse cone, and deep space radiator rejection. Conceptual rendering.}
 \label{fig:geometria_orbital}
 \end{figure}
@@ -150,7 +150,7 @@ The remainder of this article is organized as follows: Section~\ref{sec:env} pre
 \label{sec:env}
 
 \subsection{External Orbital Radiative Fluxes}
-We consider a synthetic circular low Earth orbit thermal scenario at altitude $h = 500\text{ km}$ ($R = R_E + h = 6,871\text{ km}$), with analytical orbital period $T_{orb} = 5,668.14\text{ s}$ ($\approx 94.47\text{ min}$). Defining the orbital phase as $\varphi = \mathrm{mod}(t, T_{orb})/T_{orb}$, the illuminated orbital fraction is $\varphi_{sol} = 1 - \arcsin(R_E/R)/\pi$ under the conservative assumption of solar beta angle $\beta = 0^\circ$ (which maximizes eclipse duration and thermal shock amplitudes). With orbital solar noon at $\varphi_m = \varphi_{sol}/2$ and a smooth illumination operator $\mathbb{I}_{sun}(t) = [1 + e^{120(\varphi - \varphi_{sol})}]^{-1}$, the absorbed radiative fluxes on a radiator of area $A_{rad}$ (Fig.~\ref{fig:geometria_orbital}) are given by:
+We consider a synthetic analytical orbital radiative forcing model for a circular low Earth orbit at altitude $h = 500\text{ km}$ ($R = R_E + h = 6,871\text{ km}$, with $R_E = 6,371\text{ km}$ and $\mu_E = 398,600.4418\text{ km}^3/\text{s}^2$), yielding an analytical orbital period $T_{orb} = 5,668.14\text{ s}$ ($\approx 94.47\text{ min}$). Rather than propagating numerical two-line element (TLE) ephemerides, the external environmental flux is synthesized from the analytical orbital phase $\varphi = \mathrm{mod}(t, T_{orb})/T_{orb}$ under explicit geometric simplifications: a fixed solar beta angle $\beta = 0^\circ$ (maximizing eclipse duration and eclipse-to-sunlight thermal shock), constant attitude incidence factors ($\cos 30^\circ \cos 15^\circ$), a constant Earth-to-radiator view factor $F = 0.42$, and a sinusoidal parameterization of effective terrestrial infrared temperature. With illuminated orbital fraction $\varphi_{sol} = 1 - \arcsin(R_E/R)/\pi$, orbital solar noon at $\varphi_m = \varphi_{sol}/2$, and smooth eclipse transition operator $\mathbb{I}_{sun}(t) = [1 + e^{120(\varphi - \varphi_{sol})}]^{-1}$, the absorbed radiative fluxes on a radiator of area $A_{rad}$ (Fig.~\ref{fig:geometria_orbital}) are given by:
 \begin{align}
 \cos\theta_{ef}(t) &= \max\!\left[0,\ \cos\!\left(\tfrac{\pi(\varphi-\varphi_m)}{2\varphi_m}\right)\cos 30^\circ \cos 15^\circ\right], \\
 Q_{sol}(t) &= \mathbb{I}_{sun}(t)\, S_{solar}\, \alpha_s A_{rad} \cos\theta_{ef}(t), \\
@@ -170,7 +170,7 @@ where $R_r = 2.10\text{ K/W}$ represents the equivalent solid conductive thermal
 
 \begin{figure}
 \centering
-\includegraphics[width=0.98\columnwidth]{figuras/Gemini_Generated_Image_Figura03.jpg}
+\includegraphics[width=0.98\columnwidth]{Gemini_Generated_Image_Figura03.jpg}
 \caption{Solid conductive coupling and lateral thermal crosstalk in a multi-die carrier: heat dissipation in one node elevates base temperatures of adjacent dies and induces thermomechanical stress in BGA joints. Conceptual rendering.}
 \label{fig:diafonia_3d}
 \end{figure}
@@ -185,14 +185,14 @@ V_i &= \mathrm{clip}\!\left(V_{min} + \beta_v (f_i - f_{min}),\, V_{min},\, V_{m
 P_{dyn,i} &= \alpha_i C_{eff} V_i^2 f_i, \\
 P_{leak,i} &= P_{ref} \left(\tfrac{V_i}{V_0}\right)^{1.5} \left(\tfrac{T_i}{T_0}\right)^2 \exp\!\left[\tfrac{E_a}{k_B}\left(\tfrac{1}{T_0} - \tfrac{1}{T_i}\right)\right],
 \end{align}
-where total power is $P_i = P_{dyn,i} + P_{leak,i}$, with $\alpha_i$ denoting active workload factor, $C_{eff} = 24.5\text{ nF}$ the effective switching capacitance, and $\beta_v = (V_{max}-V_{min})/(f_{max}-f_{min})$. Leakage power $P_{leak,i}$ exhibits a quadratic-exponential dependence on absolute junction temperature $T_i$, introducing non-linear positive electrothermal feedback ($\partial P_{leak}/\partial T_i > 0$) and a risk of thermal runaway in the absence of active intervention. Nominal parameters reflect commercial 16/12~nm FinFET embedded AI accelerators (Table~\ref{tab:params}). The subthreshold model is physically validated up to 125~$^\circ$C; operations above this ceiling are tagged as unphysical extrapolations ($^\dagger$).
+where total power is $P_i = P_{dyn,i} + P_{leak,i}$, with $\alpha_i$ denoting active workload factor, $C_{eff} = 24.5\text{ nF}$ the adopted effective switching capacitance, and $\beta_v = (V_{max}-V_{min})/(f_{max}-f_{min})$. Leakage power $P_{leak,i}$ exhibits a quadratic-exponential dependence on absolute junction temperature $T_i$, introducing non-linear positive electrothermal feedback ($\partial P_{leak}/\partial T_i > 0$) and a risk of thermal runaway in the absence of active intervention. Rather than representing an experimental calibration of a specific hardware datasheet, the parameters $C_{eff} = 24.5\text{ nF}$, $P_{ref} = 0.80\text{ W}$ (at $T_0=300\text{ K}$, $V_0=0.85\text{ V}$), and $E_a = 0.20\text{ eV}$ are adopted as synthetic modeling assumptions scaled to match typical 10--25~W embedded accelerator power envelopes~\citep{reuther2022accelerator, kang2025power} (Table~\ref{tab:params}). Equation~(7) is restricted to a nominal modeling domain ceiling of 125~$^\circ$C; simulated trajectories exceeding 125~$^\circ$C represent out-of-domain numerical extrapolations and are explicitly tagged ($^\dagger$).
 
 \subsection{Compact Thermal Network ($5\times5$ CTM)}
-The planar thermal coupling across an array of $N=4$ dies mounted on a shared AlN substrate is modeled by a lumped-parameter compact thermal network:
+The planar thermal coupling across an array of $N=4$ SoM nodes mounted on a shared AlN/Al carrier is modeled by a lumped-parameter compact thermal network:
 \begin{equation}
 c_i \frac{dT_i}{dt} = P_i(t) - \sum_{j \ne i} \frac{T_i - T_j}{R_{ij}} - \frac{T_i - T_{rad}}{R_r},
 \end{equation}
-where $c_i = 18.5\text{ J/K}$ is the die thermal capacitance. In compact matrix notation:
+where $c_i = 18.5\text{ J/K}$ denotes the \textit{effective local module node thermal capacitance}. Because a bare silicon die ($\sim 100\text{ mm}^2 \times 0.5\text{ mm}$) possesses a heat capacity below $0.2\text{ J/K}$, $c_i = 18.5\text{ J/K}$ lumps the silicon junction together with its local metallic heat spreader/lid (e.g., $\sim 20\text{ g}$ Cu/AlSiC), package substrate, TIM layer, and immediate carrier footprint beneath each module. In compact matrix notation:
 \begin{equation}
 \mathbf{C}\dot{\mathbf{T}} = \mathbf{P} - \left(\mathbf{G}_{crosstalk} + \mathbf{G}_{rad}\right)\mathbf{T} + \mathbf{G}_{rad} T_{rad}\mathbf{1}_N,
 \end{equation}
@@ -204,7 +204,7 @@ Modal decomposition of the die subsystem yields fast thermal time constants of 5
 
 \begin{figure}
 \centering
-\includegraphics[width=0.98\columnwidth]{figuras/fig_arquitetura.png}
+\includegraphics[width=0.98\columnwidth]{fig_arquitetura.png}
 \caption{Closed-loop architecture of the TCAS-DVFS framework: non-linear $5\times5$ CTM plant, EKF state observer, orbital radiative power budgeter, topological SDP scheduler, and constrained discrete LTV MPC-DVFS controller.}
 \label{fig:arquitetura}
 \end{figure}
@@ -226,7 +226,7 @@ The extended state vector $\mathbf{x} = [T_1, T_2, T_3, T_4, T_{rad}]^T \in \mat
 where process noise covariance is $\mathbf{Q} = \mathrm{diag}(0.02\,\mathbf{I}_4,\, 0.05)$, measurement noise covariance is $\mathbf{R} = \sigma_s^2 \mathbf{I}_5$, initial error covariance is $\mathbf{P}_0 = \mathrm{diag}(\mathbf{I}_4,\, 2)$, and analytical Jacobian $\mathbf{F} = \partial \mathbf{f}/\partial \mathbf{x}$ includes both the linearized Stefan-Boltzmann radiator flux ($4\varepsilon\sigma A_{rad} \hat{T}_{rad}^3 / C_{rad}$) and the analytical subthreshold leakage derivative $\partial P_{leak,i}/\partial T_i = P_{leak,i}(2/T_i + E_a/(k_B T_i^2))$. In closed-loop co-simulation, the observer is full-rank observable ($\mathrm{rank}(\mathcal{O}) = 5$) and achieves an average state tracking RMSE of $0.107\text{ K}$ ($57.1\%$ noise attenuation relative to $\sigma_s = 0.25\text{ K}$).
 
 \subsection{Physical Radiative and Conductive Power Budget Closure}
-Using onboard orbital ephemerides over a macroscopic thermal lookahead window ($\tau_{horiz} = 240.0\text{ s}$) with predicted moving-average environmental flux $\bar{Q}_{ext}(k)$ and net radiative rejection $Q_{rad,liq}(k) = \varepsilon\sigma A_{rad}(\hat{T}_{rad}^4 - T_{space}^4) - \bar{Q}_{ext}(k)$, we derive a closed-form physical power budget $P_{bud}(k)$ combining Fourier conduction and radiator enthalpy buffering. Given minimum possible total die power $P_{min,cores}(k) = \sum_{i=1}^N P_i(\hat{T}_i, f_{min}, \alpha_i)$, the quasi-steady radiator ceiling and conductive RC time constant are:
+Using the synthetic analytical orbital radiative forcing model over a macroscopic thermal lookahead window ($\tau_{horiz} = 240.0\text{ s}$) with predicted moving-average environmental flux $\bar{Q}_{ext}(k)$ and net radiative rejection $Q_{rad,liq}(k) = \varepsilon\sigma A_{rad}(\hat{T}_{rad}^4 - T_{space}^4) - \bar{Q}_{ext}(k)$, we derive a closed-form physical power budget $P_{bud}(k)$ combining Fourier conduction and radiator enthalpy buffering. Given minimum possible total die power $P_{min,cores}(k) = \sum_{i=1}^N P_i(\hat{T}_i, f_{min}, \alpha_i)$, the quasi-steady radiator ceiling and conductive RC time constant are:
 \begin{equation}
 T_{rad,max} = T_{cap} - \frac{P_{min,cores}(k)\, R_r}{N}, \quad \tau_{rad} = \frac{C_{rad}\, R_r}{N}.
 \end{equation}
@@ -244,14 +244,21 @@ At task allocation epochs ($\Delta t_{sched} = 120\text{ s}$), $M=4$ incoming ne
 \begin{equation}
 \min_{\mathbf{x} \in \Pi_N} \mathbf{x}^T \left[(\hat{\mathbf{p}}\hat{\mathbf{p}}^T) \otimes \mathbf{\Psi} - \mu_{mig}\mathrm{diag}(\mathbf{x}_{prev})\right] \mathbf{x},
 \end{equation}
-subject to bijective task assignment constraints $\sum_{i=1}^N X_{pi} = 1$ and $\sum_{p=1}^M X_{pi} = 1$. Vectorizing the binary assignment decision matrix into $\mathbf{x} = \mathrm{vec}(\mathbf{X}) \in \{0, 1\}^{N^2}$ ($n = N^2 = 16$), the Shor doubly-nonnegative semidefinite relaxation lifts the decision variable into the matrix cone:
+subject to bijective task assignment constraints $\sum_{i=1}^N X_{pi} = 1$ ($\forall p \in \{1,\dots,N\}$) and $\sum_{p=1}^N X_{pi} = 1$ ($\forall i \in \{1,\dots,N\}$), which can be written in compact linear form as $\mathbf{a}_k^T \mathbf{x} = 1$ for $k = 1,\dots,2N$, where $\mathbf{x} = \mathrm{vec}(\mathbf{X}) \in \{0, 1\}^{n}$ ($n = N^2 = 16$). The doubly-nonnegative semidefinite relaxation~\citep{boyd2004convex} lifts $\mathbf{x}$ into $\mathbf{Y} \in \mathbb{S}_+^{d} \cap \mathbb{R}_+^{d \times d}$ ($d = n + 1 = 17$, indexed on $0 \le i,j \le n$):
 \begin{equation}
-\mathbf{Y} = \begin{bmatrix} 1 & \mathbf{x}^T \\ \mathbf{x} & \mathbf{X}_{lift} \end{bmatrix} \in \mathbb{S}_+^{N^2 + 1} \cap \mathbb{R}_+^{17 \times 17}, \quad \mathbf{E}\,\mathrm{vec}(\mathbf{Y}) = \mathbf{e},
+\mathbf{Y} = \begin{bmatrix} 1 & \mathbf{x}^T \\ \mathbf{x} & \mathbf{X}_{lift} \end{bmatrix} \in \mathbb{S}_+^{17} \cap \mathbb{R}_+^{17 \times 17}, \quad \mathbf{E}\,\mathrm{vec}(\mathbf{Y}) = \mathbf{e}.
 \end{equation}
-solved via two-block consensus ADMM using a rank-regularized Moore-Penrose pseudoinverse ($\mathrm{rcond}=10^{-10}$, discarding the 38 algebraic-zero singular values of redundant assignment rows in $\mathbf{E} \in \mathbb{R}^{289\times 289}$). Candidate discrete allocations are recovered via randomized hyperplane rounding~\citep{boyd2004convex}. For compact $N=4$ layouts, the exact permutation space contains $4! = 24$ configurations, permitting exhaustive ex-post verification of the heuristic rounding suboptimality ratio ($\mathrm{hit} = 100.0\%$ across all 142 scheduling epochs in the 3-orbit campaign); no approximate dual optimality gap is claimed from the ADMM relaxation itself.
+To ensure complete mathematical reproducibility, the linear constraint system $\mathbf{E}\,\mathrm{vec}(\mathbf{Y}) = \mathbf{e}$ ($\mathbf{E} \in \mathbb{R}^{289\times 289}$) is assembled from four explicit row blocks:
+\begin{enumerate}[(i)]
+\item \textit{Homogenization anchor ($1$ row):} $Y_{0,0} = 1$;
+\item \textit{Binary idempotence lifting ($n = 16$ rows):} $Y_{i,i} - Y_{0,i} = 0$ for $i = 1,\dots,16$, enforcing $\mathrm{diag}(\mathbf{X}_{lift}) = \mathbf{x}$ (corresponding to $x_i^2 = x_i$);
+\item \textit{Explicit matrix symmetry ($d(d-1)/2 = 136$ rows):} $Y_{i,j} - Y_{j,i} = 0$ for all $0 \le i < j \le 16$;
+\item \textit{Column-lifted assignment constraints ($2N \times d = 8 \times 17 = 136$ rows):} for each of the $2N = 8$ row/column assignment indicator vectors $\mathbf{a}_k \in \{0,1\}^{16}$ and each matrix column $l \in \{0,\dots,16\}$, we enforce $\sum_{j=1}^{16} a_{k,j} Y_{j,l} - Y_{0,l} = 0$, obtained by multiplying $(\mathbf{a}_k^T \mathbf{x} - 1) = 0$ by each lifted coordinate $y_l \in \{1, x_1, \dots, x_{16}\}$. Setting $l = 0$ (where $Y_{0,0}=1$ and $Y_{j,0}=x_j$) directly enforces $\mathbf{a}_k^T \mathbf{x} = 1$, preserving exact primal assignment feasibility on the first row/column of $\mathbf{Y}$, while $l \ge 1$ tightens the off-diagonal blocks of $\mathbf{X}_{lift}$.
+\end{enumerate}
+Summing the four blocks yields $1 + 16 + 136 + 136 = 289$ rows. Because the $2N = 8$ bipartite assignment equations possess one classical linear dependency ($\sum_p \sum_i X_{pi} = \sum_i \sum_p X_{pi}$), its lifting across $17$ columns combined with the symmetry and diagonal equations produces $38$ exact algebraic redundancies, leaving $\mathrm{rank}(\mathbf{E}) = 251$ ($\sigma_{251} = 0.3480$, whereas $\sigma_{252} = 1.50\times 10^{-14}$). The affine projection step $\mathrm{vec}(\mathbf{Y}) = \mathbf{v}_{tg} - \mathbf{E}^+(\mathbf{E}\mathbf{v}_{tg} - \mathbf{e})$ inside the two-block consensus ADMM is therefore computed using a rank-regularized Moore-Penrose pseudoinverse ($\mathrm{rcond}=10^{-10}$), which discards the 38 algebraic-zero singular values and bounds $\|\mathbf{E}^+\|_2 = 2.87$. Candidate discrete allocations are extracted via randomized hyperplane rounding ($24$ draws plus first-column projection). In interpreting the scheduler validation results, four metrics must be strictly distinguished: (1) \textit{ADMM numerical convergence} within the 120-iteration cap, which reaches $42.0\%$ under warm start (mean $94.8$ iterations, $r_{pri} \le 9.27\times 10^{-3}$, $r_{dua} \le 3.39\times 10^{-2}$) and $62.0\%$ under cold start across 50 benchmark instances; (2) \textit{relaxed cone-affine feasibility}, where $\|\mathbf{E}\,\mathrm{vec}(\mathbf{Y})-\mathbf{e}\|_\infty \le 5.25\times 10^{-15}$, $\lambda_{\min}(\mathbf{Z}_1) \ge -1.08\times 10^{-15}$, and $\min(\mathbf{Z}_2) = 0$; (3) \textit{post-rounding objective quality}; and (4) \textit{empirical match with exhaustive permutation search} ($\mathrm{hit} = 100.0\%$ across all $142/142$ scheduling calls in the 3-orbit campaign). Because $N=4$ dies yield only $4! = 24$ discrete permutations, this $100\%$ empirical hit rate reflects the small discrete search space recovered by hyperplane rounding rather than full ADMM convergence or a certified dual optimality gap.
 
 \subsection{Discrete Linear Time-Varying Model Predictive Control (LTV MPC-DVFS)}
-To coordinate operating frequencies $\mathbf{f}(k) = [f_1, \dots, f_N]^T$ in real time, the control problem is formulated as a discrete Linear Time-Varying Model Predictive Controller executed at control interval $\Delta t_{\text{MPC}} = 2.0\text{ s}$ over a control horizon $H_c = 8$ steps (16.0~s) and prediction horizon $H_p = 30$ steps (60.0~s) with decoupled spatio-temporal slack variables $\mathbf{s} \in \mathbb{R}_+^{N H_p}$ ($120$ slacks, $32$ control frequencies, $152$ decision variables in total):
+To coordinate operating frequencies $\mathbf{f}(k) = [f_1, \dots, f_N]^T$ online at each control interval ($\Delta t_{\text{MPC}} = 2.0\text{ s}$), the control problem is formulated as a discrete Linear Time-Varying Model Predictive Controller over a control horizon $H_c = 8$ steps (16.0~s) and prediction horizon $H_p = 30$ steps (60.0~s) with decoupled spatio-temporal slack variables $\mathbf{s} \in \mathbb{R}_+^{N H_p}$ ($120$ slacks, $32$ control frequencies, $152$ decision variables in total):
 \begin{align}
 \min_{\mathbf{f}, \mathbf{s}} \sum_{j=1}^{H_c} \Big[ &w \|\mathbf{f}(k+j-1) - \mathbf{f}_{nom}(k+j-1)\|^2 \nonumber \\
 &+ R_w \|\mathbf{D} \mathbf{f}(k+j-1)\|^2 \Big] \nonumber \\
@@ -264,31 +271,38 @@ f_{min} &\le f_i(k+j) \le f_{max}, \quad \forall i, j, \label{eq:mpc_f} \\
 T_i(k+j|k) &\le T_{cap} + s_{i,j}, \quad s_{i,j} \ge 0, \label{eq:mpc_tcap} \\
 \sum_{i=1}^N P_i(k+j|k) &\le P_{bud}(k+j), \quad \forall j, \label{eq:mpc_pbud}
 \end{align}
-where $w = 1.0$ penalizes deviation from nominal inference request $\mathbf{f}_{nom}$, $R_w = 0.2$ regularizes frequency change rate via the first-difference operator $\mathbf{D}$, $\rho = 0.02$ penalizes spatial temperature gradients relative to instantaneous spatial mean $\tilde{\mathbf{T}}_{grad} = \mathbf{T} - (\frac{1}{N}\mathbf{1}_N^T\mathbf{T})\mathbf{1}_N$, and $\lambda = 200.0$ penalizes the decoupled non-negative spatio-temporal thermal constraint slack variables $s_{i,j} \ge 0$ under nominal thermal cap $T_{cap} = 83.0^\circ\text{C}$.
+where $w = 1.0$ penalizes deviation from nominal inference request $\mathbf{f}_{nom}$, $R_w = 0.2$ regularizes frequency change rate via the first-difference operator $\mathbf{D}$, $\rho = 0.02$ penalizes spatial temperature gradients relative to instantaneous spatial mean $\tilde{\mathbf{T}}_{grad} = \mathbf{T} - (\frac{1}{N}\mathbf{1}_N^T\mathbf{T})\mathbf{1}_N$, and $\lambda = 200.0$ penalizes the decoupled non-negative spatio-temporal thermal constraint slack variables $s_{i,j} \ge 0$. Because $s_{i,j} \ge 0$ relaxes Eq.~\eqref{eq:mpc_tcap} to guarantee recursive QP feasibility, $T_{cap} = 83.0^\circ\text{C}$ acts as a \textit{penalized soft thermal cap} rather than a hard barrier, permitting small, bounded transient excursions above $83.0^\circ\text{C}$ while maintaining a $2.0\text{ K}$ safety buffer below the adopted $85.0^\circ\text{C}$ upper simulation thermal limit.
 
-The condensed quadratic program is solved using a warm-started ADMM-style splitting method~\citep{boyd2011admm, stellato2020osqp} with row-equilibrated constraint matrix $\mathbf{A}$ (reducing $\kappa_2(\mathbf{A})$ from $207.1$ to $9.64$), over-relaxation parameter $\alpha = 1.6$, step size $\rho_{\mathrm{ADMM}} = 1.0$, regularization $\sigma = 10^{-6}$, and a fixed iteration cap of 60 iterations. OSQP-style scaled primal and dual convergence tolerances ($\varepsilon_{pri}, \varepsilon_{dua}$) and formal diagnostic statuses are evaluated at each control update. A reactive Deterministic Safety Override (DSO) defense-in-depth heuristic barrier operates at the plant rate ($\Delta t_{\text{plant}} = 0.5\text{ s}$), intervening if estimated temperatures exceed $84.5^\circ\text{C}$ to clamp frequencies according to $f_i \le f_{nom,i} \max[0.15, (85.0 - T_i)/(85.0 - 75.0)]$.
+\textbf{Solver Convergence and Explicit Non-Convergent Fallback Policy:}
+The condensed quadratic program is solved using a warm-started ADMM-style splitting method~\citep{boyd2011admm, stellato2020osqp} with row-equilibrated constraint matrix $\mathbf{A}$ (reducing $\kappa_2(\mathbf{A})$ from $207.1$ to $9.64$), over-relaxation parameter $\alpha = 1.6$, step size $\rho_{\mathrm{ADMM}} = 1.0$, regularization $\sigma = 10^{-6}$, and a fixed cap of 60 iterations. OSQP-style scaled primal and dual convergence tolerances ($\varepsilon_{pri}, \varepsilon_{dua}$) and formal diagnostic statuses (\texttt{converged}, \texttt{max\_iter}, \texttt{soft\_constraint\_violation}, \texttt{numerical\_failure}) are evaluated at every update. Whenever an ADMM call does not satisfy both $r_{pri} \le \varepsilon_{pri}$ and $r_{dua} \le \varepsilon_{dua}$ within 60 iterations (\texttt{converged = False}), the unconverged iterate is discarded and an explicit deterministic fallback policy ($\mathbf{f}_{\mathrm{fb}}(k)$) is triggered: (i) the controller retrieves the shifted control tail $\mathbf{F}_{\mathrm{conv}}[\min(k_{\mathrm{since}}, H_c - 1)]$ from the last converged trajectory (or $\mathbf{f}(k-1)$), clamped to $[f_{min}, \min(f_{max}, \mathbf{f}_{nom}(k))]$; (ii) if any estimated die temperature approaches the soft cap ($\hat{T}_i \ge T_{cap} - 0.5\text{ K}$), a smooth preventive derating factor $(T_{bar} - \hat{T}_i)/(T_{bar} - (T_{cap} - 2.0))$ is applied; and (iii) if total power at the candidate frequency exceeds $P_{bud}(k)$, the frequencies are analytically scaled toward $f_{min}$ via $(P_{bud}(k) - P_{min,cores})/(P_{\mathrm{cand}} - P_{min,cores})$ to guarantee strict compliance with the physical power budget. Finally, a reactive Deterministic Safety Override (DSO) defense-in-depth heuristic barrier operates at the plant rate ($\Delta t_{\text{plant}} = 0.5\text{ s}$), intervening if estimated temperatures exceed $T_{bar} = 84.5^\circ\text{C}$ to clamp frequencies according to $f_i \le f_{nom,i} \max[0.15, (85.0 - T_i)/(85.0 - 75.0)]$.
+
+\textbf{LTV Prediction Fidelity Across the Horizon:}
+Because the LTV predictor freezes the local electrothermal Jacobian ($\partial P_{leak}/\partial T_i$, $\partial P/\partial f_i$) and radiator slope at step $k$ across the 30-step ($60.0\text{ s}$) open-loop horizon, non-linear leakage feedback and $T^4$ radiation introduce growing open-loop prediction drift at long lookahead times. Independent open-loop validation against the non-linear RK2 plant across three operating regimes reveals that: (i) in nominal steady operation, the maximum prediction error across dies is $0.042\text{ K}$ at $2.0\text{ s}$ ($j=1$), $0.229\text{ K}$ at $10.0\text{ s}$ ($j=5$), $0.650\text{ K}$ at $30.0\text{ s}$ ($j=15$), and $1.632\text{ K}$ at $60.0\text{ s}$ ($j=30$, horizon $\mathrm{RMSE} = 0.802\text{ K}$); and (ii) under active DVFS heating, the open-loop error is $0.141\text{ K}$ at $2.0\text{ s}$, $0.613\text{ K}$ at $10.0\text{ s}$, $2.601\text{ K}$ at $30.0\text{ s}$, and reaches $4.561\text{ K}$ at the end of the $60.0\text{ s}$ horizon (horizon $\mathrm{RMSE} = 2.398\text{ K}$). In closed-loop receding-horizon operation, this $60\text{ s}$ open-loop tail drift does not induce violations of the $85.0^\circ\text{C}$ limit because only the first control move ($j=1$, $\Delta t_{\text{MPC}} = 2.0\text{ s}$, where prediction error is bounded by $0.04\text{--}0.31\text{ K}$) is applied before the EKF updates the state and the LTV matrices are re-linearized at $t + 2.0\text{ s}$, while the $2.0\text{ K}$ buffer between $T_{cap} = 83.0^\circ\text{C}$ and $85.0^\circ\text{C}$ absorbs short-term linearization residuals.
 
 \begin{table*}[t]
-\caption{System Simulation, Electrothermal, and Orbital Parameters}
+\caption{System Simulation, Electrothermal, and Orbital Parameters with Explicit Provenance Classification}
 \label{tab:params}
 \centering
 \small
-\begin{tabular*}{\textwidth}{@{\extracolsep{\fill}}p{0.24\textwidth}p{0.44\textwidth}p{0.28\textwidth}@{}}
+\begin{tabular*}{\textwidth}{@{\extracolsep{\fill}}p{0.20\textwidth}p{0.38\textwidth}p{0.18\textwidth}p{0.20\textwidth}@{}}
 \toprule
-\textbf{Parameter Category} & \textbf{Symbol \& Description} & \textbf{Nominal Value \& Source} \\
+\textbf{Category} & \textbf{Symbol \& Physical Meaning} & \textbf{Nominal Value} & \textbf{Provenance Class} \\
 \midrule
-Conductive Resistances & $R_{12}=R_{34}$, $R_{13}=R_{24}$, $R_{14}=R_{23}$ & 1.45, 1.52, 3.20~K/W (MCM carrier model)~\citep{wang2025packaging} \\
-Die-to-Radiator Resistance & $R_r$ (conductive thermal resistance per die node) & 2.10~K/W (Cold plate interface)~\citep{ecss2008thermal} \\
-Thermal Capacitances & $c_i$ (silicon die node), $C_{rad}$ (radiator core $m\,c_p$) & 18.5~J/K (FinFET die), 1,299.2~J/K (1.45~kg Al) \\
-Radiator Properties & $A_{rad}$ (area), $\varepsilon$ (emissivity), $\alpha_s$ (absorptivity) & 0.12~m$^2$, 0.88 (white paint), 0.12~\citep{pederson2024radiator} \\
-Orbital Environment & $h$ (altitude), $T_{orb}$ (period), $F$ (view factor), $a_E$ (albedo) & 500~km, 5,668.14~s, 0.42, 0.30~\citep{gilmore2002handbook} \\
-Electrical Operational & $V_{min}$--$V_{max}$, $f_{min}$--$f_{max}$ & 0.65--1.05~V, 0.30--1.30~GHz (16/12~nm FinFET) \\
-Leakage Parameters & $C_{eff}$ (capacitance), $P_{ref}$ ($T_0=300\text{ K}$, $V_0=0.85\text{ V}$), $E_a$ & 24.5~nF, 0.80~W, 0.20~eV~\citep{kang2025power} \\
-State Observer (EKF) & Sensor noise $\sigma_s$, Covariances $\mathbf{Q}$, $\mathbf{P}_0$, $\mathbf{R}$ & $\sigma_s=0.25\text{ K}$, $\mathbf{Q}=\mathrm{diag}(0.02, 0.02, 0.02, 0.02, 0.05)$, $\mathbf{R}=\sigma_s^2\mathbf{I}_5$ \\
-MPC Formulation & $\Delta t_{\text{MPC}}$, $H_c$, $H_p$, $T_{cap}$, $T_{bar}$, Weights $w, R_w, \rho, \lambda$ & 2.0~s, 8 steps (16~s), 30 steps (60~s), 83.0~$^\circ$C, 84.5~$^\circ$C, $w=1.0, R_w=0.2, \rho=0.02, \lambda=200.0$ \\
-Workload Benchmarks & Nominal inference throughputs ($\mathrm{FPS}_{nom}$) & SAR-YOLO (45), Cloud-Seg (60), Hyper-ViT (30), Telemetry (80) \\
+Lateral Resistances & $R_{12}=R_{34}$, $R_{13}=R_{24}$, $R_{14}=R_{23}$ (inter-node carrier conduction) & 1.45, 1.52, 3.20~K/W & Adopted modeling assumption$^a$ \\
+Die-to-Radiator Res. & $R_r$ (conductive resistance from module node to radiator core) & 2.10~K/W & Adopted modeling assumption$^a$ \\
+Node Capacitances & $c_i$ (effective local module node: die + Cu/AlSiC lid + TIM + carrier footprint) & 18.5~J/K & Calculated/assumed composite$^b$ \\
+Radiator Capacitance & $C_{rad} = m_{rad} c_{p,rad}$ ($1.45\text{ kg}$ Al 6061-T6, $c_p = 896\text{ J/(kg}\cdot\text{K)}$) & 1,299.2~J/K & Calculated from geometry/mass \\
+Radiator Optical Prop. & $A_{rad}$ (panel area), $\varepsilon$ (IR emissivity), $\alpha_s$ (solar absorptivity) & 0.12~m$^2$, 0.88, 0.12 & Literature (white coating)~\citep{pederson2024radiator} \\
+Orbital Environment & $h$, $T_{orb}$ (from $R_E, \mu_E$), view factor $F$, Earth albedo $a_E$, $\beta$ & 500~km, 5,668.14~s, 0.42, 0.30, $0^\circ$ & Analytical / Literature~\citep{gilmore2002handbook} \\
+DVFS Domain & $V_{min}$--$V_{max}$, $f_{min}$--$f_{max}$ (nominal CMOS operating range) & 0.65--1.05~V, 0.30--1.30~GHz & Adopted modeling assumption$^c$ \\
+Power \& Leakage & $C_{eff}$ (switching cap.), $P_{ref}$ ($T_0=300\text{ K}, V_0=0.85\text{ V}$), $E_a$ & 24.5~nF, 0.80~W, 0.20~eV & Adopted modeling assumption$^c$ \\
+State Observer (EKF) & Sensor noise $\sigma_s$, process/measurement covariances $\mathbf{Q}, \mathbf{R}$ & $\sigma_s=0.25\text{ K}$, $\mathrm{diag}(0.02\mathbf{I}_4, 0.05)$ & Design tuning~\citep{zhang2011tvlsi} \\
+MPC \& Safety Limits & $\Delta t_{\text{MPC}}$, $H_c$, $H_p$, soft cap $T_{cap}$, DSO $T_{bar}$, sim. limit $T_{lim}$ & 2.0~s, 8, 30, 83.0, 84.5, 85.0~$^\circ$C & Controller design parameters \\
+Workload Proxies & Nominal inference rates ($\mathrm{FPS}_{nom}$ at $f_{max}$) & 45, 60, 30, 80~FPS & Synthetic benchmark profile \\
 \bottomrule
 \end{tabular*}
+\par\vspace{2pt}\footnotesize
+$^a$ Synthetic lumped-network resistances scaled to represent order-of-magnitude conductive coupling across a shared metallic/ceramic MCM carrier~\citep{wang2025packaging, ecss2008thermal}. $^b$ Represents the lumped local thermal mass of each SoM subassembly (silicon die $<0.2\text{ J/K}$ plus local lid/heat spreader and substrate region), not bare silicon alone. $^c$ Synthetic electrothermal parameters scaled to produce 10--25~W per-module dissipation consistent with embedded accelerator literature~\citep{reuther2022accelerator, kang2025power}; not calibrated to a specific commercial datasheet.
 \end{table*}
 
 \section{Computational Simulation Methodology}
@@ -354,14 +368,16 @@ Space-PID & 79.73 & 85.56 & 4.88 & 0.62 & 14.0 & 123.24 & 7.47 & 920.5 \\
 Power Cap (65~W) & 93.95 & 109.31 & 5.82 & 3.66 & 14,983.5 & 126.49 & 8.55 & 1,081.3 \\
 TCA-DVFS (simple) & 80.53 & 83.68 & 1.58 & 0.45 & 0.0 & 116.16 & 8.03 & 932.6 \\
 \midrule[\heavyrulewidth]
-\textbf{TCAS-DVFS (Proposed)} & \textbf{80.16} & \textbf{83.25} & \textbf{2.01} & \textbf{0.89} & \textbf{0.0} & \textbf{124.62} & \textbf{7.45} & \textbf{928.7} \\
+\textbf{TCAS-DVFS (Proposed)} & \textbf{80.15} & \textbf{83.25} & \textbf{2.01} & \textbf{0.89} & \textbf{0.0} & \textbf{124.62} & \textbf{7.45} & \textbf{928.6} \\
 \bottomrule
 \end{tabular*}
 \par\vspace{2pt}\footnotesize
 $^\dagger$ Regimes beyond model validity ceiling ($>125^\circ$C). Linux Ondemand experiences thermal runaway under positive subthreshold leakage feedback, reaching 412.30~$^\circ$C and dissipating an unphysical average of 302.5~W. This regime represents numerical extrapolation failure and is strictly excluded from quantitative reliability and performance inferences. Overshoot to 86.06~$^\circ$C in Throttling 85/75 stems from sampling latency and sensor noise.
 \end{table*}
 
-Table~\ref{tab:results_completo} presents the consolidated comparative results across 3 full orbits. \textbf{TCAS-DVFS} successfully maintained junction temperatures strictly below the 85~$^\circ$C flight envelope, registering a peak of $83.25^\circ\text{C}$ and \textbf{zero observed seconds of thermal violation} ($0.00\%$). In contrast, standard Thermal Throttling 85/75 accumulated 200.5~s of overheating due to hysteresis latency, and Space-PID breached the limit for 14.0~s during the post-eclipse thermal shock.
+Table~\ref{tab:results_completo} presents the consolidated comparative results across 3 full orbits. \textbf{TCAS-DVFS} successfully maintained junction temperatures strictly below the adopted 85~$^\circ$C simulation thermal limit, registering a peak of $83.25^\circ\text{C}$ and \textbf{zero observed seconds of thermal violation} ($0.00\%$). Because $T_{cap} = 83.0^\circ\text{C}$ is formulated as a soft thermal cap with slack variables $s_{i,j} \ge 0$, the controller permits a bounded $0.25\text{ K}$ excursion above $83.0^\circ\text{C}$ during peak solar loading while remaining $1.75\text{ K}$ below the $85.0^\circ\text{C}$ limit. In contrast, standard Thermal Throttling 85/75 accumulated 200.5~s of overheating due to hysteresis latency, and Space-PID breached the limit for 14.0~s during the post-eclipse thermal shock.
+
+Across the 8,502 online MPC updates executed during the 3-orbit nominal campaign, the warm-started ADMM solver satisfied the scaled primal-dual stopping criteria ($\varepsilon_{pri}, \varepsilon_{dua}$) within the 60-iteration budget in 94.31\% of calls ($8,018/8,502$, averaging $29.7$ iterations per update), with zero numerical failures (\texttt{NaN}/\texttt{Inf}) and zero physical power-budget infeasibilities ($P_{bud}(k) \ge P_{min,cores}(k)$ at all steps). In the remaining 484 updates (5.69\%), which occurred during rapid workload-step transitions where the dual residual $r_{dua}$ remained marginally above $\varepsilon_{dua}$ at iteration 60 ($r_{pri} \le 1.76\times 10^{-2}$, $r_{dua} \le 6.42\times 10^{-2}$), the explicit non-convergent fallback policy ($\mathbf{f}_{\mathrm{fb}}$) was triggered 484 times. During all fallback activations, physical junction temperatures remained strictly bounded below $83.25^\circ\text{C}$ (with noisy EKF state estimates reaching at most $T_{\max,\mathrm{fb}} = 83.42^\circ\text{C}$), confirming that the deterministic power-projected fallback prevents any control degradation or thermal overshoot when the iterative solver reaches its fixed iteration ceiling.
 
 In terms of processing throughput, TCAS-DVFS delivered 124.62~FPS, outperforming Throttling 85/75 (+4.2\%) and conservative Throttling 83/73 (+4.9\%), while achieving the lowest energy-delay product proxy among all evaluated policies ($7.452\text{ kJ}\cdot\text{s/frame}$ versus $7.456\text{ kJ}\cdot\text{s/frame}$ for Throttling 83/73 and $7.574\text{ kJ}\cdot\text{s/frame}$ for Throttling 85/75). Relative to simple uncoordinated TCA-DVFS (116.16~FPS, $8.028\text{ kJ}\cdot\text{s/frame}$), the constrained MPC controller delivered a +7.3\% throughput boost and a 7.2\% reduction in $E_{t_{\mathrm{frame}}}$, demonstrating the practical efficacy of active multivariable coordination.
 
@@ -378,10 +394,10 @@ In terms of processing throughput, TCAS-DVFS delivered 124.62~FPS, outperforming
 $T_{\max}$ ($^\circ$C) & $85.89 \pm 0.15$ & $85.54 \pm 0.04$ & $\mathbf{83.24 \pm 0.02}$ \\
 $t_{>85}$ (s) & $213.5 \pm 15.7$ & $14.6 \pm 0.7$ & $\mathbf{0.0 \pm 0.0}$ \\
 $\Delta T_{\text{peak}}$ (K) & $9.48 \pm 0.09$ & $4.86 \pm 0.02$ & $\mathbf{2.00 \pm 0.01}$ \\
-$\Delta T_{\text{mean}}$ (K) & $5.26 \pm 0.13$ & $0.617 \pm 0.001$ & $\mathbf{0.885 \pm 0.001}$ \\
+$\Delta T_{\text{mean}}$ (K) & $5.26 \pm 0.13$ & $0.617 \pm 0.001$ & $\mathbf{0.886 \pm 0.001}$ \\
 FPS & $119.70 \pm 0.35$ & $123.24 \pm 0.00$ & $\mathbf{124.62 \pm 0.00}$ \\
 $E_{t_{\mathrm{frame}}}$ (kJ$\cdot$s/frame) & $7.566 \pm 0.024$ & $7.469 \pm 0.000$ & $\mathbf{7.452 \pm 0.000}$ \\
-Energy (kJ) & $905.7 \pm 0.3$ & $920.47 \pm 0.01$ & $\mathbf{928.66 \pm 0.01}$ \\
+Energy (kJ) & $905.7 \pm 0.3$ & $920.47 \pm 0.01$ & $\mathbf{928.64 \pm 0.01}$ \\
 \bottomrule
 \end{tabular*}
 \end{table}
@@ -392,26 +408,26 @@ Table~\ref{tab:sementes} details performance across 10 independent stochastic no
 
 \begin{figure*}
 \centering
-\includegraphics[width=0.88\textwidth]{figuras/fig_transiente.png}
-\caption{Temporal co-simulation dynamics over 3 complete orbits (seed 0): (a) maximum silicon junction temperature ($T_{\max}$), demonstrating strict compliance of TCAS-DVFS below 85~$^\circ$C versus saw-tooth hysteresis in Throttling; (b) aggregate AI inference throughput smoothed with a 120~s moving average.}
+\includegraphics[width=0.88\textwidth]{fig_transiente.png}
+\caption{Temporal co-simulation dynamics over 3 complete orbits (seed 0): (a) maximum silicon junction temperature ($T_{\max}$), demonstrating strict compliance of TCAS-DVFS below the 85~$^\circ$C simulation limit versus saw-tooth hysteresis in Throttling; (b) aggregate AI inference throughput smoothed with a 120~s moving average.}
 \label{fig:transiente}
 \end{figure*}
 
 \begin{figure}
 \centering
-\includegraphics[width=0.98\columnwidth]{figuras/fig_gradiente.png}
+\includegraphics[width=0.98\columnwidth]{fig_gradiente.png}
 \caption{Temporal evolution of inter-die spatial thermal gradient ($\Delta T_{esp}(t) = \max_i T_i - \min_i T_i$) with a 120~s moving average: active suppression of conductive crosstalk by TCAS-DVFS.}
 \label{fig:gradiente}
 \end{figure}
 
 \begin{figure}
 \centering
-\includegraphics[width=0.98\columnwidth]{figuras/fig_trajetorias.png}
+\includegraphics[width=0.98\columnwidth]{fig_trajetorias.png}
 \caption{Individual junction temperature profiles for the 4 silicon dies (seed 0): homogeneous convergence under coordinated TCAS-DVFS versus spatial divergence under classical baselines.}
 \label{fig:trajetorias}
 \end{figure}
 
-Figs.~\ref{fig:transiente}, \ref{fig:gradiente}, and \ref{fig:trajetorias} illustrate the orbital transient responses. While Throttling induces saw-tooth oscillations near 10~K and Space-PID exhibits gradient excursions during daylight transitions ($\Delta T_{\text{peak}} = 4.88\text{ K}$), TCAS-DVFS dampens mean gradients to $0.89\text{ K}$ (an 83.1\% reduction) and peak gradients to $2.01\text{ K}$ (a 78.7\% reduction relative to Throttling). Operating temperatures remained above 83~$^\circ$C for 44.6\% of the orbital period (7,580.5~s out of 17,004.0~s), confirming that the predictive controller deliberately tracks the upper thermal boundary to maximize compute throughput while never activating the $84.5^\circ\text{C}$ safety override ($n_{bar} = 0$).
+Figs.~\ref{fig:transiente}, \ref{fig:gradiente}, and \ref{fig:trajetorias} illustrate the orbital transient responses. While Throttling induces saw-tooth oscillations near 10~K and Space-PID exhibits gradient excursions during daylight transitions ($\Delta T_{\text{peak}} = 4.88\text{ K}$), TCAS-DVFS dampens mean gradients to $0.89\text{ K}$ (an 83.1\% reduction) and peak gradients to $2.01\text{ K}$ (a 78.7\% reduction relative to Throttling). Operating temperatures remained above the nominal 83~$^\circ$C soft cap for 44.5\% of the three-orbit simulation duration (7,571.0~s out of 17,004.0~s), confirming that the predictive controller deliberately tracks the upper thermal boundary to maximize compute throughput while never activating the $84.5^\circ\text{C}$ safety override ($n_{bar} = 0$).
 
 \subsection{Functional Ablation Study}
 \label{sec:ablacao}
@@ -429,7 +445,7 @@ Full ($H_p=30$, 60.0~s) & 83.21 & 2.01 & 1.00 & 132.92 & 2.504 & 0.0 \\
 Without SDP & 83.21 & 2.01 & 0.98 & 133.25 & 2.499 & 0.0 \\
 Without MPC & 85.41 & 7.09 & 1.59 & 123.11 & 2.801 & 463.5 \\
 $H_p = 10$ (20.0~s) & 83.21 & 2.00 & 1.00 & 132.91 & 2.504 & 0.0 \\
-$H_p = 60$ (120.0~s) & 83.21 & 2.01 & 1.00 & 132.92 & 2.504 & 0.0 \\
+$H_p = 60$ (120.0~s) & 83.21 & 2.42 & 1.00 & 132.91 & 2.504 & 0.0 \\
 Simple TCA & 83.66 & 1.58 & 0.60 & 126.28 & 2.645 & 0.0 \\
 \bottomrule
 \end{tabular*}
@@ -438,20 +454,20 @@ Simple TCA & 83.66 & 1.58 & 0.60 & 126.28 & 2.645 & 0.0 \\
 The ablation results in Table~\ref{tab:ablacao} (evaluated over 1 orbit, 11,337 steps) isolate the architectural mechanisms:
 \begin{itemize}
 \item \textbf{Dominant observed contribution of MPC-DVFS in the tested configuration:} removing the MPC controller (\textit{Without MPC}) immediately leads to thermal threshold exceedance, accumulating 463.5~s above 85~$^\circ$C, a peak of $85.41^\circ\text{C}$, and an increase in peak gradient to $7.09\text{ K}$ despite 8,573 activations of the reactive safety backstop. Dynamic lookahead within the MPC is the primary driver of proactive containment.
-\item \textbf{Limited observed benefit of SDP scheduling for the tested $N=4$ configuration:} the \textit{Without SDP} variant (static task assignment) achieves performance essentially identical to the full framework ($83.21^\circ\text{C}$, $133.25\text{ FPS}$, $2.499\text{ kJ}\cdot\text{s/frame}$). Although the rank-regularized SDP allocator matched the ex-post optimal discrete permutation in 100.0\% of calls ($48/48$ calls in 1 orbit and $142/142$ calls in 3 orbits, performing 12 and 36 task migrations, respectively), in small planar symmetric configurations ($N=4$) conductive cross-coupling is spatially balanced, rendering topological remapping largely neutral once the migration stall penalty is accounted for. Whether topology-aware scheduling becomes beneficial for larger and asymmetric arrays remains an open question.
-\item \textbf{No material difference observed at the reported precision for the tested horizons:} varying prediction horizon $H_p \in \{10, 30, 60\}$ steps (corresponding to physical lookahead intervals of 20.0, 60.0, and 120.0~s under $\Delta t_{\text{MPC}} = 2.0\text{ s}$) produced nearly identical performance metrics ($132.91\text{--}132.92\text{ FPS}$, $2.504\text{ kJ}\cdot\text{s/frame}$). This enables adopting shorter horizons ($H_p=10$) to minimize onboard processor utilization.
+\item \textbf{Limited observed benefit of SDP scheduling for the tested $N=4$ configuration:} the \textit{Without SDP} variant (static task assignment) achieves performance essentially identical to the full framework ($83.21^\circ\text{C}$, $133.25\text{ FPS}$, $2.499\text{ kJ}\cdot\text{s/frame}$). Although randomized hyperplane rounding over the rank-regularized SDP relaxation matched the best discrete permutation found by exhaustive search in 100.0\% of calls ($48/48$ calls in 1 orbit and $142/142$ calls in 3 orbits, performing 12 and 36 task migrations, respectively, despite ADMM numerical convergence occurring in only $42.0\%$ of warm-started benchmark calls), for $N=4$ dies there are only $4! = 24$ permutations and conductive cross-coupling is spatially balanced. Consequently, topological remapping is largely neutral once the migration stall penalty is accounted for, and its contribution in compact four-die clusters is secondary to predictive DVFS.
+\item \textbf{No material difference observed at the reported precision for the tested horizons:} varying prediction horizon $H_p \in \{10, 30, 60\}$ steps (corresponding to physical lookahead intervals of 20.0, 60.0, and 120.0~s under $\Delta t_{\text{MPC}} = 2.0\text{ s}$) produced nearly identical performance metrics ($132.91\text{--}132.92\text{ FPS}$, $2.504\text{ kJ}\cdot\text{s/frame}$). Crucially, reducing the horizon to $H_p=10$ ($20.0\text{ s}$) achieves 100.0\% ADMM convergence within 60 iterations ($2,834/2,834$ calls, averaging $20.1$ iterations with zero fallback activations) while bounding open-loop LTV linearization drift below $1.5\text{ K}$, confirming that the $4.56\text{ K}$ open-loop prediction error at $60.0\text{ s}$ does not degrade closed-loop regulation.
 \end{itemize}
 
-\subsection{Parametric Sensitivity Analysis (Latin Hypercube Sampling, $n=30$)}
+\subsection{Parametric Sensitivity Analysis (Stratified Latin Hypercube Sampling, $n=30$)}
 \label{sec:incerteza}
-To rigorously assess sensitivity against manufacturing dispersions and environmental deviations, a 30-sample Latin Hypercube Sampling (LHS) campaign was conducted (3 full orbits per sample, evaluating 1,020,270 integration steps) with simultaneous continuous uniform perturbations of $\pm20\%$ across $R_{ij}$, $R_r$, $c_i$, and $C_{rad}$ forming a parametric stress-test envelope.
+To evaluate descriptive sensitivity to variations in the passive conductive and capacitive thermal network, a 30-sample stratified Latin Hypercube Sampling (LHS) campaign was conducted (3 full orbits per sample, evaluating 1,020,270 integration steps) with simultaneous continuous uniform perturbations of $\pm20\%$ across the four network parameters $R_{ij}$, $R_r$, $c_i$, and $C_{rad}$, while holding radiator optical properties ($\varepsilon, \alpha_s$), radiator area ($A_{rad}$), electrical power parameters, and external orbital fluxes at their nominal values.
 
-No thermal-threshold violations were observed in the 30 sampled uncertainty realizations ($0/30$ samples $> 85^\circ\text{C}$, with mean $T_{\max} = 82.36 \pm 1.58^\circ\text{C}$, 95\% CI: $[81.77, 82.95]^\circ\text{C}$). By the exact Clopper-Pearson method, the one-sided 95\% confidence upper bound for violation probability is \textbf{9.50\%} (two-sided 95\% upper bound: \textbf{11.57\%}). Thus, while the campaign demonstrates robust containment within the sampled envelope, it does not establish a zero underlying violation probability (in contrast to Throttling 85/75, which violated thresholds in 100\% of samples with a mean violation time of $234.8\text{ s}$).
+Because LHS is a stratified sampling design without replacement rather than an independent and identically distributed (IID) Bernoulli sequence, the campaign is reported strictly as a descriptive sensitivity analysis across the sampled four-parameter space without applying binomial Clopper-Pearson confidence bounds. No thermal-threshold violations above the $85^\circ\text{C}$ simulation limit were observed across the 30 sampled realizations ($0/30$ samples $> 85^\circ\text{C}$, with mean $T_{\max} = 82.35 \pm 1.58^\circ\text{C}$, 95\% CI: $[81.76, 82.94]^\circ\text{C}$, bootstrap 95\% interval: $[81.77, 82.89]^\circ\text{C}$), whereas Throttling 85/75 exceeded $85^\circ\text{C}$ in all $30/30$ samples (mean violation time $234.8\text{ s}$). Across all $255,060$ MPC updates executed in the 30 LHS trajectories under plant-model mismatch, the ADMM solver converged within 60 iterations in 84.76\% of calls ($216,178/255,060$) and triggered the explicit safe fallback policy in the remaining 15.24\% ($38,882$ calls, with peak EKF temperature during fallback of $83.83^\circ\text{C}$) without any violation of the $85^\circ\text{C}$ limit.
 
 In paired comparisons under identical physical parameters:
 \begin{enumerate}[(i)]
-\item \textit{Versus Throttling 83/73}: TCAS-DVFS reduced peak temperatures by $1.51\text{ K}$ (95\% CI: $[-2.10, -0.93]\text{ K}$), attenuated mean and peak spatial gradients by $-82.54\%$ and $-78.62\%$, improved inference throughput by $+4.95\%$ (95\% CI: $[+4.11\%, +5.80\%]$), and reduced the EDP proxy by $-1.23\%$ (95\% CI: $[-1.79\%, -0.67\%]$).
-\item \textit{Versus Throttling 85/75}: TCAS-DVFS reduced peak temperature by $3.54\text{ K}$ (95\% CI: $[-4.12, -2.96]\text{ K}$), attenuated mean and peak spatial gradients by $-82.61\%$ and $-78.74\%$, raised throughput by $+4.08\%$ (95\% CI: $[+3.22\%, +4.93\%]$), and achieved an EDP reduction of $-2.62\%$ (95\% CI: $[-3.19\%, -2.06\%]$).
+\item \textit{Versus Throttling 83/73}: TCAS-DVFS reduced peak temperatures by $1.51\text{ K}$ (95\% CI: $[-2.10, -0.93]\text{ K}$), attenuated mean and peak spatial gradients by $-82.48\%$ and $-78.46\%$, improved inference throughput by $+4.95\%$ (95\% CI: $[+4.11\%, +5.80\%]$), and reduced the EDP proxy by $-1.23\%$ (95\% CI: $[-1.79\%, -0.67\%]$).
+\item \textit{Versus Throttling 85/75}: TCAS-DVFS reduced peak temperature by $3.54\text{ K}$ (95\% CI: $[-4.12, -2.96]\text{ K}$), attenuated mean and peak spatial gradients by $-82.55\%$ and $-78.58\%$, raised throughput by $+4.08\%$ (95\% CI: $[+3.22\%, +4.93\%]$), and achieved an EDP reduction of $-2.63\%$ (95\% CI: $[-3.20\%, -2.06\%]$).
 \end{enumerate}
 
 Within the sampled four-parameter uncertainty space, $R_r$ exhibited the strongest monotonic association with $T_{\max}$, with Spearman rank correlation $\rho = +0.995$, followed by die heat capacity $c_{\text{die}}$ ($\rho = -0.338$), radiator capacitance $C_{rad}$ ($\rho = -0.234$), and inter-die crosstalk resistance $R_{ij}$ ($\rho = -0.173$).
@@ -473,7 +489,7 @@ Cumulative low-cycle thermal cycling severity in SAC305 solder interconnects is 
 \begin{equation}
 N_f = B\,(\Delta T_{cycle})^{-q}, \quad q = 2.1.
 \end{equation}
-Applying a three-point rainflow algorithm formally validated against the standard test sequences of ASTM E1049-85 (Section 5.4.4) and synthetic benchmarks to confirm exact peak-to-peak range counting ($\Delta T = T_{\text{peak}} - T_{\text{valley}}$), the maximum cyclic thermal excursion after transient warm-up dropped from $11.20\text{ K}$ (Throttling) to $2.38\text{ K}$ (TCAS-DVFS).
+Applying a three-point rainflow algorithm formally validated against the standard test sequences of ASTM E1049-85 (Section 5.4.4) and synthetic benchmarks to confirm exact peak-to-peak range counting ($\Delta T = T_{\text{peak}} - T_{\text{valley}}$), the maximum cyclic thermal excursion after transient warm-up dropped from $11.20\text{ K}$ (Throttling) to $2.39\text{ K}$ (TCAS-DVFS).
 
 \begin{table}[t]
 \caption{Rainflow Cycle Counting and Relative Fatigue Damage Severity Ratios ($q=2.1$, Aggregate Dies)}
@@ -486,16 +502,16 @@ Applying a three-point rainflow algorithm formally validated against the standar
 \textbf{Threshold} & \textbf{Cycles} & \textbf{Cycles} & \textbf{Damage Ratio} \\
 \textbf{($\Delta T$)} & \textbf{Throttling} & \textbf{TCAS-DVFS} & \textbf{($D_{\text{thr}}/D_{\text{prop}}$)} \\
 \midrule
-0.25~K & 741 & 259 & 681.6 \\
-1.00~K & 724 & 29 & 1,129.7 \\
-2.00~K & 612 & 8 & 3,192.0 \\
+0.25~K & 741 & 259 & 680.7 \\
+1.00~K & 724 & 29 & 1,127.8 \\
+2.00~K & 612 & 8 & 3,171.7 \\
 \bottomrule
 \end{tabular*}
 \end{table}
 
 \begin{figure}
 \centering
-\includegraphics[width=0.98\columnwidth]{figuras/fig_confiabilidade.png}
+\includegraphics[width=0.98\columnwidth]{fig_confiabilidade.png}
 \caption{Rainflow thermal cycle range spectrum ($\Delta T$, 0.25~K threshold after warm-up): TCAS-DVFS suppresses nearly all damaging cycles ($\Delta T > 2\text{ K}$).}
 \label{fig:confiabilidade}
 \end{figure}
@@ -529,17 +545,17 @@ Dynamic Thermal Management (DTM) in terrestrial multi-core architectures has bee
 \label{sec:practice}
 
 \subsection{Implementation Constraints}
-Deploying TCAS-DVFS on spaceborne flight computers requires addressing real-time execution constraints:
+Deploying TCAS-DVFS on spaceborne flight computers requires addressing online execution constraints for future real-time-oriented embedded deployment:
 \begin{enumerate}
-\item \textbf{Execution Complexity:} Embedded execution time, memory footprint, and worst-case timing remain to be benchmarked on flight-representative hardware. The warm-started ADMM-style iteration operates with a fixed cap of 60 iterations and early exit monitoring to prevent execution overruns.
+\item \textbf{Execution Complexity:} Embedded execution time, memory footprint, and worst-case timing remain to be benchmarked on flight-representative hardware. The warm-started ADMM-style iteration operates with a fixed cap of 60 iterations, early exit monitoring, and an explicit deterministic shifted-tail fallback policy to guarantee bounded execution time and safe actuation when the iteration limit is reached.
 \item \textbf{Memory Footprint:} The complete EKF covariance matrices, discrete prediction models, and warm-start vectors require modest scratchpad memory fitting within typical rad-hard microcontrollers.
 \end{enumerate}
 
 \subsection{Threats to Validity}
 As a model-based numerical investigation, several limitations must be explicitly recognized:
 \begin{enumerate}
-\item \textbf{Absence of Physical and Environmental Testing:} The findings rely entirely on numerical simulation of the stated lumped-parameter thermal network and have not been validated via Hardware-in-the-Loop (HIL) testbeds or Thermal Vacuum (TVAC) chamber testing.
-\item \textbf{Lumped Modeling vs.\ Continuum Physics:} While the $5\times5$ CTM captures inter-die conductive coupling and bulk radiator dynamics, it does not resolve spatial micro-gradients across silicon dies, localized hot spots, or three-dimensional heat spreader diffusion.
+\item \textbf{Absence of Physical and Environmental Testing:} The findings rely entirely on numerical simulation of the stated lumped-parameter thermal network and synthetic analytical orbital forcing, and have not been validated via Hardware-in-the-Loop (HIL) testbeds or Thermal Vacuum (TVAC) chamber testing.
+\item \textbf{Lumped Modeling and Linearization Drift:} While the $5\times5$ CTM captures inter-die conductive coupling and bulk radiator dynamics, it does not resolve spatial micro-gradients across silicon dies or three-dimensional heat spreader diffusion. Furthermore, open-loop LTV linearization exhibits up to $4.56\text{ K}$ prediction drift at a $60\text{ s}$ horizon under active heating, relying on $2.0\text{ s}$ receding-horizon relinearization and the $2.0\text{ K}$ soft-cap margin for closed-loop containment.
 \item \textbf{Throughput and Reliability Proxies:} Workload throughput is evaluated via a linear frequency proxy rather than cycle-accurate kernel profiling. Similarly, Black's equation and Coffin-Manson models are indicative proxies based on temperature histories rather than direct measurements of current density or plastic strain.
 \item \textbf{Omission of Space Radiation Effects:} The present study focuses strictly on electrothermal dynamics and does not model Single Event Effects (SEE) or Total Ionizing Dose (TID), which can affect DVFS stability and memory integrity in orbital environments.
 \end{enumerate}
@@ -548,9 +564,9 @@ As a model-based numerical investigation, several limitations must be explicitly
 \label{sec:concl}
 This paper presented TCAS-DVFS, a predictive control framework designed to mitigate spatial thermal crosstalk in high-density spaceborne AI clusters operating in deep orbital vacuum. The conclusions of this model-based numerical study are delineated into three levels:
 \begin{enumerate}
-\item \textbf{Demonstrated in the nominal model:} Integrated EKF state estimation, coupled radiative-conductive power budgeting, SVD-regularized SDP placement, and discrete LTV MPC-DVFS produced zero observed thermal violations above the 85~$^\circ$C flight threshold over 3 complete simulated LEO orbits (17,004.0~s), attenuated peak and mean inter-die spatial gradients by 78.7\% and 83.1\%, respectively, and sustained 124.62~FPS. Ablation indicates a dominant contribution from the predictive control formulation in damping gradients and bounding temperatures, while SVD-regularized SDP allocation matches exact permutation optimality (100\% hit rate) with negligible steady-state macroscopic thermal divergence in compact $N=4$ arrangements.
-\item \textbf{Observed under parametric sensitivity sampling:} Under a $\pm20\%$ Latin Hypercube Sampling stress-test envelope ($n=30$), zero thermal violations were observed, yielding a 95\% Clopper-Pearson exact upper bound of 9.50\% (one-sided; 11.57\% two-sided). Sensitivity was heavily dominated by die-to-radiator thermal resistance ($R_r$, Spearman $\rho = +0.995$).
-\item \textbf{Unverified physically:} The reported evidence is limited to numerical simulation. Physical service life, flight qualification, TVAC chamber behavior, and radiation tolerance remain unverified and constitute mandatory steps for future experimental development.
+\item \textbf{Demonstrated in the nominal model:} Online EKF state estimation, coupled radiative-conductive power budgeting, and discrete LTV MPC-DVFS (with a penalized 83~$^\circ$C soft thermal cap and explicit non-convergent fallback) produced zero observed thermal violations above the adopted 85~$^\circ$C simulation thermal limit over 3 complete simulated LEO orbits (17,004.0~s), attenuated peak and mean inter-die spatial gradients by 78.7\% and 83.1\%, respectively, and sustained 124.62~FPS. Ablation indicates a dominant contribution from the predictive control formulation in damping gradients and bounding temperatures, whereas SDP allocation matches exhaustive permutation search across the $4! = 24$ discrete candidates after rounding ($100\%$ hit rate despite $42\%$ warm-start ADMM convergence) but yields negligible macroscopic thermal benefit in compact symmetric $N=4$ arrangements.
+\item \textbf{Observed under descriptive parametric sensitivity sampling:} Under a $\pm20\%$ stratified Latin Hypercube Sampling campaign ($n=30$) perturbing the four conductive and capacitive network parameters ($R_{ij}, R_r, c_i, C_{rad}$), zero violations above 85~$^\circ$C were observed ($0/30$ samples), with sensitivity heavily dominated by die-to-radiator thermal resistance ($R_r$, Spearman $\rho = +0.995$). Because LHS is a non-IID stratified design, these results represent descriptive sensitivity within the sampled four-parameter envelope rather than a probabilistic reliability certification.
+\item \textbf{Unverified physically:} The reported evidence is limited to numerical simulation. Physical service life, flight qualification, TVAC chamber behavior, embedded execution timing, and radiation tolerance remain unverified and constitute mandatory steps for future experimental development.
 \end{enumerate}
 
 \section*{CRediT Authorship Contribution Statement}

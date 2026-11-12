@@ -1,4 +1,6 @@
 import sys, os
+for _env_var in ("OMP_NUM_THREADS", "MKL_NUM_THREADS", "OPENBLAS_NUM_THREADS", "NUMEXPR_NUM_THREADS"):
+    os.environ.setdefault(_env_var, "1")
 _src_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'src'))
 if _src_dir not in sys.path:
     sys.path.insert(0, _src_dir)
@@ -105,16 +107,32 @@ def simular_amostra(args):
     ]
     res_amostra = {}
     linhas_amostra = []
+    info_tcas = {}
     for n, mk in nomes:
-        v = linha(C.simular(sc, mk(), seed=i, par=par), sc)
+        sim_out = C.simular(sc, mk(), seed=i, par=par)
+        m = C.metricas(sim_out, sc, arred=False)
+        v = [m[k] for k in MET]
         res_amostra[n] = v
+        extra_cols = {}
+        if n == "TCAS-DVFS":
+            inf = m.get("info", {})
+            info_tcas = {
+                "n_mpc": int(inf.get("n_mpc", 0)),
+                "n_converged_qp": int(inf.get("n_converged_qp", 0)),
+                "n_max_iter_qp": int(inf.get("n_max_iter_qp", 0)),
+                "n_fallback_mpc": int(inf.get("n_fallback_mpc", 0)),
+                "Tmax_fallback_C": float(inf.get("Tmax_fallback_C", 0.0)),
+                "n_barreira": int(inf.get("n_barreira", 0)),
+            }
+            extra_cols = info_tcas
         linhas_amostra.append({
             "amostra": i,
             "estrategia": n,
             **{FAT[j]: f_vals[j] for j in range(4)},
-            **dict(zip(MET, v))
+            **dict(zip(MET, v)),
+            **extra_cols,
         })
-    return i, res_amostra, linhas_amostra
+    return i, res_amostra, linhas_amostra, info_tcas
 
 
 def main():
@@ -131,22 +149,25 @@ def main():
 
     nomes_lista = ["Throttling 85/75", "Throttling 83/73", "TCAS-DVFS"]
     R = {n: [None] * a.amostras for n in nomes_lista}
+    infos_tcas = [None] * a.amostras
     linhas = []
 
     print(f"Iniciando execucao de incerteza ({a.amostras} amostras, {a.orbitas} orbitas, {n_workers} workers)...", flush=True)
 
     if n_workers > 1:
         with Pool(processes=n_workers) as pool:
-            for idx, (i, res_amostra, linhas_amostra) in enumerate(pool.imap_unordered(simular_amostra, tarefas)):
+            for idx, (i, res_amostra, linhas_amostra, info_tcas) in enumerate(pool.imap_unordered(simular_amostra, tarefas)):
                 for n in nomes_lista:
                     R[n][i] = res_amostra[n]
+                infos_tcas[i] = info_tcas
                 linhas.extend(linhas_amostra)
                 print("amostra %d concluida [%d/%d] (%.0f s)" % (i + 1, idx + 1, a.amostras, time.time() - t0), flush=True)
     else:
         for idx, t_args in enumerate(tarefas):
-            i, res_amostra, linhas_amostra = simular_amostra(t_args)
+            i, res_amostra, linhas_amostra, info_tcas = simular_amostra(t_args)
             for n in nomes_lista:
                 R[n][i] = res_amostra[n]
+            infos_tcas[i] = info_tcas
             linhas.extend(linhas_amostra)
             print("amostra %d/%d (%.0f s)" % (i + 1, a.amostras, time.time() - t0), flush=True)
 
@@ -154,16 +175,47 @@ def main():
     linhas.sort(key=lambda x: (x["amostra"], x["estrategia"]))
     R = {n: np.array(v) for n, v in R.items()}
 
+    chaves_csv = []
+    for l in linhas:
+        for k in l:
+            if k not in chaves_csv:
+                chaves_csv.append(k)
     with open(os.path.join(a.saida, "amostras.csv"), "w", newline="", encoding="utf-8") as fh:
-        w = csv.DictWriter(fh, fieldnames=list(linhas[0].keys()), delimiter=";"); w.writeheader(); w.writerows(linhas)
+        w = csv.DictWriter(fh, fieldnames=chaves_csv, delimiter=";"); w.writeheader(); w.writerows(linhas)
 
     rb = np.random.default_rng(123)
-    res = {"n": a.amostras, "amp": a.amp, "orbitas": a.orbitas, "individual": {}, "pareado_pct": {}, "pareado_abs": {}}
+    res = {
+        "n": a.amostras,
+        "amp": a.amp,
+        "orbitas": a.orbitas,
+        "escopo_e_metodo_lhs": (
+            "Latin Hypercube Sampling (LHS) estratificada sobre os 4 parametros passivos da rede termica "
+            "(Rij, Rr, c_die, C_rad). Como LHS nao constitui amostragem Bernoulli IID, os resultados sao "
+            "reportados como analise de sensibilidade descritiva sem inferencia binomial de Clopper-Pearson."
+        ),
+        "individual": {},
+        "pareado_pct": {},
+        "pareado_abs": {},
+    }
     for n, M in R.items():
         res["individual"][n] = {MET[j]: ic(M[:, j], rb) for j in range(6)}
         k = int((M[:, 1] > 0).sum())
         res["individual"][n]["amostras_com_violacao"] = k
-        res["individual"][n]["violacao_taxa_IC95_sup"] = clopper_pearson_sup(k, a.amostras)
+        res["individual"][n]["fracao_amostral_violacao"] = float(k / a.amostras)
+    tot_mpc = sum(x["n_mpc"] for x in infos_tcas if x)
+    tot_conv = sum(x["n_converged_qp"] for x in infos_tcas if x)
+    tot_fb = sum(x["n_fallback_mpc"] for x in infos_tcas if x)
+    tmax_fb = max((x["Tmax_fallback_C"] for x in infos_tcas if x), default=0.0)
+    res["mpc_diagnostico_lhs"] = {
+        "total_mpc_calls": int(tot_mpc),
+        "total_converged_qp": int(tot_conv),
+        "total_fallback_mpc": int(tot_fb),
+        "convergence_rate_pct": float(100.0 * tot_conv / max(1, tot_mpc)),
+        "fallback_rate_pct": float(100.0 * tot_fb / max(1, tot_mpc)),
+        "Tmax_during_fallback_C": float(tmax_fb),
+        "fallback_per_sample_mean": float(np.mean([x["n_fallback_mpc"] for x in infos_tcas if x])),
+        "fallback_per_sample_max": int(max((x["n_fallback_mpc"] for x in infos_tcas if x), default=0)),
+    }
     T = R["TCAS-DVFS"]
     for ref in ("Throttling 85/75", "Throttling 83/73"):
         B = R[ref]

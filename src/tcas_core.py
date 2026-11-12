@@ -12,6 +12,9 @@ Auditoria Física (PINN-Oriented):
 - C07: Validação defensiva de tipos, finitude e positividade física.
 - C08: Hipóteses orbitais LEO explícitas (insolação zênite, albedo, IR terrestre e fundo cósmico).
 """
+import os
+for _env_var in ("OMP_NUM_THREADS", "MKL_NUM_THREADS", "OPENBLAS_NUM_THREADS", "NUMEXPR_NUM_THREADS"):
+    os.environ.setdefault(_env_var, "1")
 import math
 import numpy as np
 
