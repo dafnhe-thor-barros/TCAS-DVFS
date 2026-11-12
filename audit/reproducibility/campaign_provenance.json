@@ -1,0 +1,194 @@
+{
+  "project": "TCAS-DVFS: Thermal-Crosstalk-Aware Scheduling and Model Predictive DVFS for Spaceborne AI",
+  "timestamp_utc": "2026-11-12T04:00:48.644839+00:00",
+  "environment": {
+    "python_version": "3.14.6",
+    "python_executable": "C:\\Python314\\python.exe",
+    "numpy_version": "2.5.4",
+    "scipy_version": "1.18.1",
+    "matplotlib_version": "3.11.2",
+    "operating_system": "Windows 11 (10.0.26300)",
+    "architecture": "64bit",
+    "processor": "Intel64 Family 6 Model 126 Stepping 5, GenuineIntel"
+  },
+  "version_control": {
+    "vcs": "git",
+    "repository": "https://github.com/dafnhe-thor-barros/TCAS-DVFS",
+    "baseline_frozen_tag": "audit-baseline-a8027ee",
+    "baseline_frozen_commit": "a8027ee943659c61a09f3abb7043e22b89e74941",
+    "code_commit_hash": "4d7881ec7ed9cc4fc3a1bca62b5b82abba3caaa2",
+    "git_commit_hash": "4d7881ec7ed9cc4fc3a1bca62b5b82abba3caaa2",
+    "provenance_note": "code_commit_hash e git_commit_hash registram exatamente o commit do código-fonte e dos testes de auditoria (Fases 0 a 6) com o qual todos os artefatos experimentais desta campanha foram gerados."
+  },
+  "simulation_parameters": {
+    "orbit_scenario": "500-km circular Sun-Synchronous Orbit (synthetic)",
+    "altitude_km": 500.0,
+    "orbital_period_s": 5668.144369,
+    "total_orbits_nominal": 3,
+    "total_simulation_duration_s": 17004.0,
+    "time_samples": 34009,
+    "dt_plant_s": 0.5,
+    "dt_mpc_s": 2.0,
+    "ksub": 4,
+    "dt_sched_s": 120.0,
+    "prediction_horizon_steps": 30,
+    "control_horizon_steps": 8,
+    "decision_variables_mpc": 152,
+    "spatial_temporal_slacks": 120,
+    "thermal_cap_tcap_degC": 83.0,
+    "thermal_barrier_tbar_degC": 84.5,
+    "noise_seeds": [
+      0,
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7,
+      8,
+      9
+    ],
+    "lhs_samples": 30,
+    "lhs_perturbation_pct": 20.0
+  },
+  "execution_commands": {
+    "pinn_gradient_unit_tests": "python audit/tests/test_pinn_gradients.py",
+    "pinn_validation": "python experiments/validar_pinn.py",
+    "mpc_admm_validation": "python audit/mpc/validate_mpc_admm.py",
+    "thermal_budget_validation": "python audit/numerical_validation/validate_thermal_budget.py",
+    "sdp_scheduler_validation": "python audit/sdp/validate_sdp_scheduler.py",
+    "ekf_jacobian_dso_validation": "python audit/numerical_validation/validate_ekf_and_dso.py",
+    "reliability_rainflow_validation": "python audit/numerical_validation/validate_reliability_metrics.py",
+    "jacobian_validation": "python experiments/validacao_jacobiano.py",
+    "rainflow_validation": "python experiments/validacao_rainflow.py",
+    "temporal_convergence": "python experiments/run_convergencia_temporal.py",
+    "primary_campaign": "python experiments/run_experimentos.py --orbitas 3 --orbitas-ablacao 1 --sementes 10 --saida results --workers 8",
+    "uncertainty_campaign": "python experiments/run_incerteza.py --amostras 30 --orbitas 3 --saida results --workers 8",
+    "figure_generation": "python experiments/gerar_figuras.py"
+  },
+  "data_manifest": {
+    "results/tabela1.csv": "Desempenho consolidado das 8 políticas de controle em 3 órbitas (semente 0)",
+    "results/tabela_sementes.csv": "Estatísticas de dispersão entre 10 sementes estocásticas de ruído de sensor",
+    "results/ablacao.csv": "Estudo de ablação funcional arquitetural (1 órbita, semente 0)",
+    "results/resultados.json": "Resultados consolidados da campanha principal, ablação, confiabilidade e multi-semente",
+    "results/amostras.csv": "Matriz de 30 amostras de amostragem por hipercubo latino (LHS, +-20%)",
+    "results/resumo_incerteza.csv": "Intervalos de confiança t-Student e bootstrap (B=4000) da campanha de incerteza",
+    "results/spearman.csv": "Correlações de postos de Spearman entre parâmetros térmicos e métricas",
+    "results/incerteza.json": "Resultados completos da campanha de incerteza paramétrica e Clopper-Pearson",
+    "results/convergencia_temporal.csv": "Avaliação do erro numérico com dt in [1.0, 0.5, 0.25, 0.125] s",
+    "results/convergencia_temporal.json": "Métricas detalhadas de convergência temporal com dt_MPC=2.0s e dt_SDP=120.0s invariantes",
+    "results/fig_validacao_pinn.png": "Curvas de validação out-of-sample da PINN térmica vs MLP supervisionada e ground truth Heun",
+    "results/metadata.json": "Metadados de reprodutibilidade, commit de código e manifesto SHA-256"
+  },
+  "artifact_checksums_sha256": {
+    "src/tcas_core.py": {
+      "sha256": "9f4aa52d559aa23078a9cbeb4356c71533781f0fcd37e5d0135fad48690e91de",
+      "size_bytes": 19235
+    },
+    "src/tcas_dvfs.py": {
+      "sha256": "129f764e6f1b66466fd5f97ff520e6ac2a8811fc576391fe23b2d32ebf321023",
+      "size_bytes": 22766
+    },
+    "src/pinn_thermal.py": {
+      "sha256": "bb0e172bbbe8756139ed3f4b5b9c593ba23c5ec56fa8a093d285b399f6b1b9f2",
+      "size_bytes": 21794
+    },
+    "experiments/run_experimentos.py": {
+      "sha256": "e083881de6c843a20fba8245cd47290ab0b46d50e8d5ba96a43a5a3ed154162c",
+      "size_bytes": 10724
+    },
+    "experiments/run_incerteza.py": {
+      "sha256": "142babec15095202ec933da097cc9a8b3f23dd164afe25edabb36ffe5fc114a6",
+      "size_bytes": 7332
+    },
+    "experiments/run_convergencia_temporal.py": {
+      "sha256": "5bdbb604426ba892132afd4872db2688fc9c2cd1e131bd14a53c3b23f433cddd",
+      "size_bytes": 4451
+    },
+    "experiments/validar_pinn.py": {
+      "sha256": "f80216021405476d127c03d964313e95246a28e12bfaaa6eb4e2ee7d201f0d65",
+      "size_bytes": 13017
+    },
+    "experiments/validacao_jacobiano.py": {
+      "sha256": "69bb0c5eb841cb32ebaa4923bf4cf62d2326be7c046f383874a9a53c5cbf8f20",
+      "size_bytes": 4084
+    },
+    "experiments/validacao_rainflow.py": {
+      "sha256": "caeb3665c228edab6f5cdac700f0e479bc0886219cd9262c319b0f3dd7a16bec",
+      "size_bytes": 6280
+    },
+    "experiments/gerar_figuras.py": {
+      "sha256": "6b14754e9d88e4bc9ffe16e9dabb0606a29172176e040566a390ad99acc96fb6",
+      "size_bytes": 7170
+    },
+    "results/tabela1.csv": {
+      "sha256": "cfdd0a503e6f932528168f72068f69d488c0b1db88fa6380b4ac3d67943d5095",
+      "size_bytes": 1509
+    },
+    "results/tabela_sementes.csv": {
+      "sha256": "26da8698bc2ed843b871a7afc070928e8afa5978f97711080c299fc2bcb7a785",
+      "size_bytes": 1092
+    },
+    "results/ablacao.csv": {
+      "sha256": "d7c7227d305273ff48fb8e40eb7f4719340881c6634a5762e61557145f140936",
+      "size_bytes": 1435
+    },
+    "results/resultados.json": {
+      "sha256": "8cfd5ca6c4d405523f2d7f02332583a645222a0687fdce158a806b4dee978d5b",
+      "size_bytes": 11623
+    },
+    "results/amostras.csv": {
+      "sha256": "6e710ec8dab7187d1830a7cceed46b03e73cc7a8d6fd4462ca3a1643681fc8a2",
+      "size_bytes": 17096
+    },
+    "results/incerteza.json": {
+      "sha256": "57a7c98a3369c9af46c76a9a9a97c2045fcee96e342d8e8843892cd4bd324400",
+      "size_bytes": 7032
+    },
+    "results/convergencia_temporal.csv": {
+      "sha256": "9e8ca3da5fdba6a146b8c529da035b7239b225fef491b8ec72419a5282e1c3cc",
+      "size_bytes": 651
+    },
+    "results/convergencia_temporal.json": {
+      "sha256": "9039aa87c5b1beb9b13d3d3793344a2e49d00ec5d282300cb6a1186697cd6c6f",
+      "size_bytes": 1595
+    },
+    "audit/pinn/pinn_gradient_tests.json": {
+      "sha256": "0728ce718e4a42c79b38585a718d47b39fac1036459b37c4f86bc2997c36b2af",
+      "size_bytes": 1908
+    },
+    "audit/pinn/pinn_vs_mlp_comparison.json": {
+      "sha256": "39f5c73bae6f5dcc9ef795b279903f9a02faa624c85552b579900ebd09091f89",
+      "size_bytes": 2963
+    },
+    "audit/pinn/pinn_training_curves.csv": {
+      "sha256": "b46c1bafbd6574fcb8e6fdbecb6563a2665bfa806cbe1aeab6d759878ad55e85",
+      "size_bytes": 46891
+    },
+    "audit/mpc/mpc_validation_report.json": {
+      "sha256": "ca2a725ba5b7114c9e19da9b7d9ac1df575318c71056f3ba275ebc5008a6d30b",
+      "size_bytes": 12821
+    },
+    "audit/mpc/mpc_nonlinear_prediction_error.csv": {
+      "sha256": "b0768e2339ee1319a7764aec599e79971820a2ee9cdbb3b681a0b615b36f0580",
+      "size_bytes": 13595
+    },
+    "audit/numerical_validation/thermal_budget_validation.json": {
+      "sha256": "289401fef1935ebae9dacf4edc6a6124234bcb07ed04c66e6425c0f72f158cb7",
+      "size_bytes": 13318
+    },
+    "audit/sdp/sdp_validation_report.json": {
+      "sha256": "54be1674d16ecc485c66ef5397dc3b67d6bac019b18ca3f127bb990b3c4d5b1e",
+      "size_bytes": 10278
+    },
+    "audit/numerical_validation/ekf_jacobian_dso_report.json": {
+      "sha256": "c90707fadfc3aca77628b18be7d4746da0756769aa1f74cb2853c9ffb2f776b9",
+      "size_bytes": 8802
+    },
+    "audit/numerical_validation/reliability_validation.json": {
+      "sha256": "2e769d0d886b5b0f4d88676df0f6ff037da4e47ffe147c1209afe7b37242bb06",
+      "size_bytes": 5359
+    }
+  }
+}
