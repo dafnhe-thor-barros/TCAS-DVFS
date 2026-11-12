@@ -263,7 +263,7 @@ def validar_ekf_a14():
     }
 
 
-def simular_estresse_dso(cenario_nome, x0_custom, qext_boost, par_planta, t_bar=84.5, duracao_s=600.0):
+def simular_estresse_dso(cenario_nome, x0_custom, qext_boost, par_planta, t_bar=84.5, duracao_s=600.0, mpc_period_s=2.0, usa_mpc=True):
     """
     Compara o governador TCAS-DVFS com DSO ativo (t_bar = 84.5 C) vs DSO desativado (t_bar = 999.0 C)
     sob estresse severo.
@@ -287,7 +287,9 @@ def simular_estresse_dso(cenario_nome, x0_custom, qext_boost, par_planta, t_bar=
 
     resultados = {}
     for modo_dso, tb in [("com_DSO_84_5C", t_bar), ("sem_DSO", 999.0)]:
-        gov_tuple = D.gov_tcas_dvfs(usa_sched=True, usa_mpc=True, dt=dt, t_cap=83.0, t_bar=tb, sigma_s=0.25, par=C.NOM)
+        gov_tuple = D.gov_tcas_dvfs(
+            usa_sched=True, usa_mpc=usa_mpc, dt=dt, mpc_period_s=mpc_period_s, t_cap=83.0, t_bar=tb, sigma_s=0.25, par=C.NOM
+        )
         res = C.simular(sc_sub, gov_tuple, par=par_planta, sigma_s=0.25, seed=77)
         info = res["info"]
         T_dies_C = res["T"]
@@ -313,7 +315,7 @@ def validar_dso_a17():
             par_planta=C.NOM,
         ),
         simular_estresse_dso(
-            "S2_radiador_saturado_77C",
+            "S2_radiador_saturado_77C_atuador_no_piso",
             x0_custom=np.array([356.15, 355.95, 355.75, 355.55, 350.15]),
             qext_boost=30.0,
             par_planta=C.NOM,
@@ -325,10 +327,18 @@ def validar_dso_a17():
             par_planta=C.NOM,
         ),
         simular_estresse_dso(
-            "S4_descasamento_parametrico_severo_Rr_1_50x",
-            x0_custom=np.array([355.65, 355.35, 355.15, 354.95, 336.15]),
+            "S4_descasamento_parametrico_inter_amostras_mpc",
+            x0_custom=np.array([356.95, 356.65, 356.35, 356.05, 336.15]),
             qext_boost=20.0,
-            par_planta=C.parametros(sRij=1.20, sRr=1.50, sC=0.80, sCr=1.00),
+            par_planta=C.parametros(sRij=1.20, sRr=1.50, sC=0.60, sCr=1.00),
+            mpc_period_s=10.0,
+        ),
+        simular_estresse_dso(
+            "S5_contingencia_falha_mpc_defesa_em_profundidade",
+            x0_custom=np.array([354.15, 353.85, 353.55, 353.25, 330.15]),
+            qext_boost=15.0,
+            par_planta=C.NOM,
+            usa_mpc=False,
         ),
     ]
     return testes

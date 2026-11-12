@@ -208,7 +208,7 @@
       }
     },
     {
-      "cenario": "S2_radiador_saturado_77C",
+      "cenario": "S2_radiador_saturado_77C_atuador_no_piso",
       "com_DSO_84_5C": {
         "T_max_C": 87.0445617283155,
         "n_ativacoes_barreira_DSO": 509,
@@ -246,22 +246,41 @@
       }
     },
     {
-      "cenario": "S4_descasamento_parametrico_severo_Rr_1_50x",
+      "cenario": "S4_descasamento_parametrico_inter_amostras_mpc",
       "com_DSO_84_5C": {
-        "T_max_C": 83.96314767021244,
-        "n_ativacoes_barreira_DSO": 0,
-        "tempo_acima_84_5C_s": 0.0,
-        "tempo_acima_85_0C_s": 0.0,
-        "integral_violacao_acima_85C_K_s": 0.0,
-        "max_excesso_acima_85C_K": 0.0
+        "T_max_C": 85.09102668743708,
+        "n_ativacoes_barreira_DSO": 982,
+        "tempo_acima_84_5C_s": 597.0,
+        "tempo_acima_85_0C_s": 7.0,
+        "integral_violacao_acima_85C_K_s": 0.24431875643625744,
+        "max_excesso_acima_85C_K": 0.09102668743707909
       },
       "sem_DSO": {
-        "T_max_C": 83.96314767021244,
+        "T_max_C": 86.69128812600053,
         "n_ativacoes_barreira_DSO": 0,
-        "tempo_acima_84_5C_s": 0.0,
-        "tempo_acima_85_0C_s": 0.0,
-        "integral_violacao_acima_85C_K_s": 0.0,
-        "max_excesso_acima_85C_K": 0.0
+        "tempo_acima_84_5C_s": 597.0,
+        "tempo_acima_85_0C_s": 449.5,
+        "integral_violacao_acima_85C_K_s": 97.03076473395126,
+        "max_excesso_acima_85C_K": 1.6912881260005292
+      }
+    },
+    {
+      "cenario": "S5_contingencia_falha_mpc_defesa_em_profundidade",
+      "com_DSO_84_5C": {
+        "T_max_C": 85.45258090668091,
+        "n_ativacoes_barreira_DSO": 1193,
+        "tempo_acima_84_5C_s": 596.5,
+        "tempo_acima_85_0C_s": 388.0,
+        "integral_violacao_acima_85C_K_s": 59.19593938096875,
+        "max_excesso_acima_85C_K": 0.45258090668090745
+      },
+      "sem_DSO": {
+        "T_max_C": 365.0124279919079,
+        "n_ativacoes_barreira_DSO": 0,
+        "tempo_acima_84_5C_s": 597.0,
+        "tempo_acima_85_0C_s": 597.0,
+        "integral_violacao_acima_85C_K_s": 111661.87943007462,
+        "max_excesso_acima_85C_K": 280.0124279919079
       }
     }
   ]
