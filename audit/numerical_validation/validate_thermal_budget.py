@@ -295,6 +295,8 @@ def main():
 
         erro_w = float(ana["P_budget_analitico_W"] - sim_ode_acop["P_media_W"])
         erro_rel_pct = float(100.0 * abs(erro_w) / max(sim_ode_acop["P_media_W"], 1e-6))
+        # Diferença entre potência média de trajetória e orçamento analítico inicial.
+        # Não é margem de segurança diretamente comparável: as bases temporais diferem.
         margem_seguranca_tcap_w = float(sim_ode_tcap["P_media_W"] - ana["P_budget_analitico_W"])
 
         resultados_regimes[cid] = {
@@ -308,9 +310,9 @@ def main():
                 "f_ode_limite_Tcap_GHz": float(f_ode_tcap),
                 "P_ode_limite_Tcap_media_W": float(sim_ode_tcap["P_media_W"]),
                 "Trad_target_240s_K": float(trad_target),
-                "erro_analitico_vs_ode_acoplado_W": erro_w,
-                "erro_relativo_acoplado_pct": erro_rel_pct,
-                "margem_conservadora_ate_violacao_Tcap_W": margem_seguranca_tcap_w,
+                "diferenca_orcamento_analitico_menos_potencia_media_ode_W": erro_w,
+                "diferenca_relativa_orcamento_vs_media_ode_pct": erro_rel_pct,
+                "diferenca_media_ode_limite_Tcap_menos_orcamento_analitico_W": margem_seguranca_tcap_w,
                 "simulacao_sob_orcamento_analitico": {
                     "P_aplicado_inicial_W": float(p_aplicado),
                     "f_comando_GHz": float(f_aplicada),
