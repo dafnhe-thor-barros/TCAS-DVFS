@@ -1,6 +1,6 @@
 {
   "project": "TCAS-DVFS: Thermal-Crosstalk-Aware Scheduling and Model Predictive DVFS for Spaceborne AI",
-  "timestamp_utc": "2026-11-12T04:00:48.644839+00:00",
+  "timestamp_utc": "2026-11-12T06:17:40.508776+00:00",
   "environment": {
     "python_version": "3.14.6",
     "python_executable": "C:\\Python314\\python.exe",
@@ -16,8 +16,8 @@
     "repository": "https://github.com/dafnhe-thor-barros/TCAS-DVFS",
     "baseline_frozen_tag": "audit-baseline-a8027ee",
     "baseline_frozen_commit": "a8027ee943659c61a09f3abb7043e22b89e74941",
-    "code_commit_hash": "4d7881ec7ed9cc4fc3a1bca62b5b82abba3caaa2",
-    "git_commit_hash": "4d7881ec7ed9cc4fc3a1bca62b5b82abba3caaa2",
+    "code_commit_hash": "3e8fb1ced4ed0b6c6665168c82beec8123ba74f1",
+    "git_commit_hash": "3e8fb1ced4ed0b6c6665168c82beec8123ba74f1",
     "provenance_note": "code_commit_hash e git_commit_hash registram exatamente o commit do código-fonte e dos testes de auditoria (Fases 0 a 6) com o qual todos os artefatos experimentais desta campanha foram gerados."
   },
   "simulation_parameters": {
@@ -75,7 +75,7 @@
     "results/amostras.csv": "Matriz de 30 amostras de amostragem por hipercubo latino (LHS, +-20%)",
     "results/resumo_incerteza.csv": "Intervalos de confiança t-Student e bootstrap (B=4000) da campanha de incerteza",
     "results/spearman.csv": "Correlações de postos de Spearman entre parâmetros térmicos e métricas",
-    "results/incerteza.json": "Resultados completos da campanha de incerteza paramétrica e Clopper-Pearson",
+    "results/incerteza.json": "Resultados completos da campanha descritiva de sensibilidade paramétrica estratificada (LHS, n=30)",
     "results/convergencia_temporal.csv": "Avaliação do erro numérico com dt in [1.0, 0.5, 0.25, 0.125] s",
     "results/convergencia_temporal.json": "Métricas detalhadas de convergência temporal com dt_MPC=2.0s e dt_SDP=120.0s invariantes",
     "results/fig_validacao_pinn.png": "Curvas de validação out-of-sample da PINN térmica vs MLP supervisionada e ground truth Heun",
@@ -83,24 +83,24 @@
   },
   "artifact_checksums_sha256": {
     "src/tcas_core.py": {
-      "sha256": "9f4aa52d559aa23078a9cbeb4356c71533781f0fcd37e5d0135fad48690e91de",
-      "size_bytes": 19235
+      "sha256": "64cddf899101b5a028ca469db6c9a9c14544ef86bb1e1ab6d645693ac5b398e5",
+      "size_bytes": 19389
     },
     "src/tcas_dvfs.py": {
-      "sha256": "129f764e6f1b66466fd5f97ff520e6ac2a8811fc576391fe23b2d32ebf321023",
-      "size_bytes": 22766
+      "sha256": "99ce7935d88ce1e1b22346c715449b937e5b71e3fcb1f5330b1aa7e43aa5efed",
+      "size_bytes": 26445
     },
     "src/pinn_thermal.py": {
       "sha256": "bb0e172bbbe8756139ed3f4b5b9c593ba23c5ec56fa8a093d285b399f6b1b9f2",
       "size_bytes": 21794
     },
     "experiments/run_experimentos.py": {
-      "sha256": "e083881de6c843a20fba8245cd47290ab0b46d50e8d5ba96a43a5a3ed154162c",
-      "size_bytes": 10724
+      "sha256": "a5e3a86def1a1b21b62c90afe102ebb4f526e2e2ced308c0b4d78a0485d4c8e0",
+      "size_bytes": 10868
     },
     "experiments/run_incerteza.py": {
-      "sha256": "142babec15095202ec933da097cc9a8b3f23dd164afe25edabb36ffe5fc114a6",
-      "size_bytes": 7332
+      "sha256": "bf953b5d804dace2ffa1c41f892425a9e061f26872035698ffe0c771badf934b",
+      "size_bytes": 9722
     },
     "experiments/run_convergencia_temporal.py": {
       "sha256": "5bdbb604426ba892132afd4872db2688fc9c2cd1e131bd14a53c3b23f433cddd",
@@ -123,28 +123,28 @@
       "size_bytes": 7170
     },
     "results/tabela1.csv": {
-      "sha256": "cfdd0a503e6f932528168f72068f69d488c0b1db88fa6380b4ac3d67943d5095",
-      "size_bytes": 1509
+      "sha256": "3b1e8f43e091f4d107b2e260bb0100928906f3ebe210a40f4c882a38501f5e04",
+      "size_bytes": 1754
     },
     "results/tabela_sementes.csv": {
-      "sha256": "26da8698bc2ed843b871a7afc070928e8afa5978f97711080c299fc2bcb7a785",
-      "size_bytes": 1092
+      "sha256": "0f7aa81523f9fb3c9a8adc2ae1187cd348927219230cc22dc86356574d4e2e80",
+      "size_bytes": 1089
     },
     "results/ablacao.csv": {
-      "sha256": "d7c7227d305273ff48fb8e40eb7f4719340881c6634a5762e61557145f140936",
-      "size_bytes": 1435
+      "sha256": "a16b2a95abedd2a6cd28b4f26fd521783adc2f7678a56a9e6147f73c48953aa1",
+      "size_bytes": 1861
     },
     "results/resultados.json": {
-      "sha256": "8cfd5ca6c4d405523f2d7f02332583a645222a0687fdce158a806b4dee978d5b",
-      "size_bytes": 11623
+      "sha256": "f2e98db64b24549c28209c066c8e5520a3e59d387f4945e467a53ff75abe1769",
+      "size_bytes": 13052
     },
     "results/amostras.csv": {
-      "sha256": "6e710ec8dab7187d1830a7cceed46b03e73cc7a8d6fd4462ca3a1643681fc8a2",
-      "size_bytes": 17096
+      "sha256": "2b6f4496dc852920226de0e3cf2da63b09aa488596fb7046b8d4a289ff7b135b",
+      "size_bytes": 18722
     },
     "results/incerteza.json": {
-      "sha256": "57a7c98a3369c9af46c76a9a9a97c2045fcee96e342d8e8843892cd4bd324400",
-      "size_bytes": 7032
+      "sha256": "79a90df5fed81d10874b502348209ab653ab92215f057d1c853a0e062cc720a4",
+      "size_bytes": 7665
     },
     "results/convergencia_temporal.csv": {
       "sha256": "9e8ca3da5fdba6a146b8c529da035b7239b225fef491b8ec72419a5282e1c3cc",
@@ -189,6 +189,22 @@
     "audit/numerical_validation/reliability_validation.json": {
       "sha256": "2e769d0d886b5b0f4d88676df0f6ff037da4e47ffe147c1209afe7b37242bb06",
       "size_bytes": 5359
+    },
+    "docs/elsevier/main.tex": {
+      "sha256": "c5edc711dfd7dee689234a457e938630ac0a1b303d6a1ee681704133f3aff90b",
+      "size_bytes": 71724
+    },
+    "docs/elsevier/main.pdf": {
+      "sha256": "dbd767f5cf6ce210825e88d3b28fd84ee408157c7c2543f116b4a726546c2041",
+      "size_bytes": 5642323
+    },
+    "docs/elsevier/highlights.txt": {
+      "sha256": "d3d80e4ac99b9f1f7cfb61a76f5a402c1b60dcb9fb75a09116519db9ee13a42b",
+      "size_bytes": 641
+    },
+    "docs/elsevier/cover_letter.tex": {
+      "sha256": "7d08c5252ee8b0c3b6f40f4f5bed0a581fe73fc6037b6cd6890b1700211c93ef",
+      "size_bytes": 4972
     }
   }
 }
