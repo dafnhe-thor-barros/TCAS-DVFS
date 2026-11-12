@@ -144,8 +144,10 @@ def simular_horizonte_planta_completa(xh0, f_cmd, al, qext_serie, dt=0.5, par=C.
 
 def frequencia_uniforme_para_potencia(xh, al, p_alvo, par=C.NOM):
     """Encontra frequência uniforme cujo consumo inicial se aproxima de p_alvo."""
-    p_min = float(sum(C.potencias(xh[:4], np.full(4, C.F_MIN), al)))
-    p_max = float(sum(C.potencias(xh[:4], np.full(4, C.F_MAX), al)))
+    pd_min, pl_min = C.potencias(xh[:4], np.full(4, C.F_MIN), al)
+    pd_max, pl_max = C.potencias(xh[:4], np.full(4, C.F_MAX), al)
+    p_min = float(np.sum(pd_min + pl_min))
+    p_max = float(np.sum(pd_max + pl_max))
     if p_alvo <= p_min:
         return float(C.F_MIN)
     if p_alvo >= p_max:
@@ -153,7 +155,8 @@ def frequencia_uniforme_para_potencia(xh, al, p_alvo, par=C.NOM):
     lo, hi = float(C.F_MIN), float(C.F_MAX)
     for _ in range(60):
         mid = 0.5 * (lo + hi)
-        p_mid = float(sum(C.potencias(xh[:4], np.full(4, mid), al)))
+        pd_mid, pl_mid = C.potencias(xh[:4], np.full(4, mid), al)
+        p_mid = float(np.sum(pd_mid + pl_mid))
         if p_mid <= p_alvo:
             lo = mid
         else:
