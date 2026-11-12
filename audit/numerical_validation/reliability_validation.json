@@ -141,11 +141,11 @@
       }
     },
     "verificacao_invariancia_algebrica": {
-      "erro_invariancia_escala_area_black": 4.440892098500626e-16,
+      "erro_invariancia_escala_area_black": 0.0,
       "erro_invariancia_range_vs_semiamplitude_cm": 8.881784197001252e-16,
       "invariancia_exata_verificada": true,
       "exemplo_metricas_relativas": {
-        "Black_razao_soma": 2.464405416712819,
+        "Black_razao_soma": 2.4644054167128195,
         "Black_razao_pior_no": 2.465390737085132,
         "J_rel_prop": 0.7973684210526315,
         "CM": {

@@ -38,7 +38,7 @@
       "tratamento_contingencia": "Se P_budget < P_min,cores, o estado é classificado explicitamente como 'physically_infeasible', incrementando n_deficit_orcamento e n_contingencia_inviavel e aplicando F_MIN sem mascarar o QP com piso artificial."
     }
   },
-  "A10_validacao_7_regimes_vs_ode": {
+  "A10_validacao_7_regimes_vs_planta_completa": {
     "R1_regime_estacionario": {
       "descricao": "Equilíbrio térmico quase-estacionário em insolação moderada (Trad = 325 K, T_dies = 342 K)",
       "analitico": {
@@ -62,17 +62,27 @@
         "limitante_ativo": "conducao_fourier_acoplada"
       },
       "numerico_ode_heun": {
-        "P_ode_acoplado_W": 58.15181163409591,
-        "P_ode_limite_Tcap_240s_W": 58.15181163409591,
+        "f_ode_acoplada_GHz": 0.7835144046522402,
+        "P_ode_acoplado_media_W": 56.95858399335468,
+        "P_ode_acoplado_pico_W": 57.98227226924635,
+        "Tmax_ode_acoplado_C": 83.00000000000102,
+        "f_ode_limite_Tcap_GHz": 0.7835144046522402,
+        "P_ode_limite_Tcap_media_W": 56.95858399335468,
         "Trad_target_240s_K": 331.59663694654256,
-        "erro_analitico_vs_ode_acoplado_W": -1.5588006700133548,
-        "erro_relativo_acoplado_pct": 2.6805711227393467,
-        "margem_conservadora_ate_violacao_Tcap_W": 1.5588006700133548,
+        "diferenca_orcamento_analitico_menos_potencia_media_ode_W": -0.3655730292721273,
+        "diferenca_relativa_orcamento_vs_media_ode_pct": 0.6418225377842582,
+        "diferenca_media_ode_limite_Tcap_menos_orcamento_analitico_W": 0.3655730292721273,
         "simulacao_sob_orcamento_analitico": {
-          "P_aplicado_W": 56.59301096408255,
-          "max_T_die_240s_C": 82.00604829734061,
-          "final_Trad_240s_C": 52.522068780014365,
-          "respeitou_Tcap_em_operacao_viavel": true
+          "P_aplicado_inicial_W": 56.59301096408255,
+          "f_comando_GHz": 0.8116130063094857,
+          "P_media_planta_W": 60.59931632183758,
+          "P_pico_planta_W": 61.93309371554105,
+          "max_T_die_240s_C": 85.4609425448457,
+          "final_Trad_240s_C": 53.05665186185263,
+          "operacao_viavel": true,
+          "violou_Tcap": true,
+          "respeitou_Tcap": false,
+          "status_operacao_viavel": "fail"
         }
       }
     },
@@ -99,17 +109,27 @@
         "limitante_ativo": "conducao_fourier_acoplada"
       },
       "numerico_ode_heun": {
-        "P_ode_acoplado_W": 47.67363349664322,
-        "P_ode_limite_Tcap_240s_W": 47.67363349664322,
+        "f_ode_acoplada_GHz": 0.6392499257357571,
+        "P_ode_acoplado_media_W": 46.942593504562005,
+        "P_ode_acoplado_pico_W": 47.311505840697166,
+        "Tmax_ode_acoplado_C": 83.00000000000028,
+        "f_ode_limite_Tcap_GHz": 0.6392499257357571,
+        "P_ode_limite_Tcap_media_W": 46.942593504562005,
         "Trad_target_240s_K": 336.1428001285011,
-        "erro_analitico_vs_ode_acoplado_W": -1.6736334966432622,
-        "erro_relativo_acoplado_pct": 3.5106061231122765,
-        "margem_conservadora_ate_violacao_Tcap_W": 1.6736334966432622,
+        "diferenca_orcamento_analitico_menos_potencia_media_ode_W": -0.9425935045620477,
+        "diferenca_relativa_orcamento_vs_media_ode_pct": 2.007970659887899,
+        "diferenca_media_ode_limite_Tcap_menos_orcamento_analitico_W": 0.9425935045620477,
         "simulacao_sob_orcamento_analitico": {
-          "P_aplicado_W": 45.99999999999996,
-          "max_T_die_240s_C": 81.93338071797365,
-          "final_Trad_240s_C": 57.848460598910776,
-          "respeitou_Tcap_em_operacao_viavel": true
+          "P_aplicado_inicial_W": 45.99999999999996,
+          "f_comando_GHz": 0.6478111919704304,
+          "P_media_planta_W": 47.93373153193856,
+          "P_pico_planta_W": 48.36691257887414,
+          "max_T_die_240s_C": 83.66325420857498,
+          "final_Trad_240s_C": 58.109175357106665,
+          "operacao_viavel": true,
+          "violou_Tcap": true,
+          "respeitou_Tcap": false,
+          "status_operacao_viavel": "fail"
         }
       }
     },
@@ -136,17 +156,27 @@
         "limitante_ativo": "conducao_fourier_acoplada"
       },
       "numerico_ode_heun": {
-        "P_ode_acoplado_W": 42.635842056094475,
-        "P_ode_limite_Tcap_240s_W": 42.635842056094475,
+        "f_ode_acoplada_GHz": 0.7061515129487674,
+        "P_ode_acoplado_media_W": 42.24926585544844,
+        "P_ode_acoplado_pico_W": 42.779580432273654,
+        "Tmax_ode_acoplado_C": 82.99999999999972,
+        "f_ode_limite_Tcap_GHz": 0.7061515129487674,
+        "P_ode_limite_Tcap_media_W": 42.24926585544844,
         "Trad_target_240s_K": 339.5513295737486,
-        "erro_analitico_vs_ode_acoplado_W": -4.254889675142138,
-        "erro_relativo_acoplado_pct": 9.979607461590954,
-        "margem_conservadora_ate_violacao_Tcap_W": 4.254889675142138,
+        "diferenca_orcamento_analitico_menos_potencia_media_ode_W": -3.868313474496105,
+        "diferenca_relativa_orcamento_vs_media_ode_pct": 9.155930632572755,
+        "diferenca_media_ode_limite_Tcap_menos_orcamento_analitico_W": 3.868313474496105,
         "simulacao_sob_orcamento_analitico": {
-          "P_aplicado_W": 38.38095238095234,
-          "max_T_die_240s_C": 80.74317141349286,
-          "final_Trad_240s_C": 58.11877474109701,
-          "respeitou_Tcap_em_operacao_viavel": true
+          "P_aplicado_inicial_W": 38.38095238095234,
+          "f_comando_GHz": 0.6918323557634891,
+          "P_media_planta_W": 40.924720475951254,
+          "P_pico_planta_W": 41.41688444072303,
+          "max_T_die_240s_C": 82.27675114976,
+          "final_Trad_240s_C": 58.46867188096684,
+          "operacao_viavel": true,
+          "violou_Tcap": false,
+          "respeitou_Tcap": true,
+          "status_operacao_viavel": "pass"
         }
       }
     },
@@ -173,17 +203,27 @@
         "limitante_ativo": "conducao_fourier_acoplada"
       },
       "numerico_ode_heun": {
-        "P_ode_acoplado_W": 51.00399158858124,
-        "P_ode_limite_Tcap_240s_W": 51.00399158858124,
+        "f_ode_acoplada_GHz": 0.659978828749334,
+        "P_ode_acoplado_media_W": 50.390752977871024,
+        "P_ode_acoplado_pico_W": 50.93620224755757,
+        "Tmax_ode_acoplado_C": 83.00000000000017,
+        "f_ode_limite_Tcap_GHz": 0.659978828749334,
+        "P_ode_limite_Tcap_media_W": 50.390752977871024,
         "Trad_target_240s_K": 334.7122217432361,
-        "erro_analitico_vs_ode_acoplado_W": -1.1944677790574758,
-        "erro_relativo_acoplado_pct": 2.341910391430801,
-        "margem_conservadora_ate_violacao_Tcap_W": 1.1944677790574758,
+        "diferenca_orcamento_analitico_menos_potencia_media_ode_W": -0.5812291683472566,
+        "diferenca_relativa_orcamento_vs_media_ode_pct": 1.1534441023385817,
+        "diferenca_media_ode_limite_Tcap_menos_orcamento_analitico_W": 0.5812291683472566,
         "simulacao_sob_orcamento_analitico": {
-          "P_aplicado_W": 49.80952380952377,
-          "max_T_die_240s_C": 82.23862377498091,
-          "final_Trad_240s_C": 56.29499700136057,
-          "respeitou_Tcap_em_operacao_viavel": true
+          "P_aplicado_inicial_W": 49.80952380952377,
+          "f_comando_GHz": 0.6746182993519747,
+          "P_media_planta_W": 52.21063337534159,
+          "P_pico_planta_W": 52.88261152194667,
+          "max_T_die_240s_C": 84.21450003235663,
+          "final_Trad_240s_C": 56.61723991338698,
+          "operacao_viavel": true,
+          "violou_Tcap": true,
+          "respeitou_Tcap": false,
+          "status_operacao_viavel": "fail"
         }
       }
     },
@@ -210,17 +250,27 @@
         "limitante_ativo": "conducao_fourier_acoplada"
       },
       "numerico_ode_heun": {
-        "P_ode_acoplado_W": 74.29546501584525,
-        "P_ode_limite_Tcap_240s_W": 74.29546501584525,
+        "f_ode_acoplada_GHz": 0.9250209596967267,
+        "P_ode_acoplado_media_W": 72.46240667004324,
+        "P_ode_acoplado_pico_W": 74.27963618461033,
+        "Tmax_ode_acoplado_C": 82.99999999999915,
+        "f_ode_limite_Tcap_GHz": 0.9250209596967267,
+        "P_ode_limite_Tcap_media_W": 72.46240667004324,
         "Trad_target_240s_K": 324.7440087634294,
-        "erro_analitico_vs_ode_acoplado_W": -2.7407316870694274,
-        "erro_relativo_acoplado_pct": 3.6889622892661107,
-        "margem_conservadora_ate_violacao_Tcap_W": 2.7407316870694274,
+        "diferenca_orcamento_analitico_menos_potencia_media_ode_W": -0.9076733412674116,
+        "diferenca_relativa_orcamento_vs_media_ode_pct": 1.252612744978913,
+        "diferenca_media_ode_limite_Tcap_menos_orcamento_analitico_W": 0.9076733412674116,
         "simulacao_sob_orcamento_analitico": {
-          "P_aplicado_W": 71.55473332877582,
-          "max_T_die_240s_C": 81.25104933931954,
-          "final_Trad_240s_C": 44.21760061549651,
-          "respeitou_Tcap_em_operacao_viavel": true
+          "P_aplicado_inicial_W": 71.55473332877582,
+          "f_comando_GHz": 0.9568809464699439,
+          "P_media_planta_W": 77.37785996813224,
+          "P_pico_planta_W": 79.71062906918368,
+          "max_T_die_240s_C": 86.3575227297149,
+          "final_Trad_240s_C": 44.99194358354697,
+          "operacao_viavel": true,
+          "violou_Tcap": true,
+          "respeitou_Tcap": false,
+          "status_operacao_viavel": "fail"
         }
       }
     },
@@ -247,17 +297,27 @@
         "limitante_ativo": "conducao_fourier_acoplada"
       },
       "numerico_ode_heun": {
-        "P_ode_acoplado_W": 33.57556559935517,
-        "P_ode_limite_Tcap_240s_W": 33.57556559935517,
+        "f_ode_acoplada_GHz": 0.5102106080021287,
+        "P_ode_acoplado_media_W": 33.190848238084584,
+        "P_ode_acoplado_pico_W": 33.425649570734464,
+        "Tmax_ode_acoplado_C": 83.00000000000011,
+        "f_ode_limite_Tcap_GHz": 0.5102106080021287,
+        "P_ode_limite_Tcap_media_W": 33.190848238084584,
         "Trad_target_240s_K": 341.87182816657395,
-        "erro_analitico_vs_ode_acoplado_W": -2.813660837450456,
-        "erro_relativo_acoplado_pct": 8.380084705124053,
-        "margem_conservadora_ate_violacao_Tcap_W": 2.813660837450456,
+        "diferenca_orcamento_analitico_menos_potencia_media_ode_W": -2.4289434761798674,
+        "diferenca_relativa_orcamento_vs_media_ode_pct": 7.318112085465761,
+        "diferenca_media_ode_limite_Tcap_menos_orcamento_analitico_W": 2.4289434761798674,
         "simulacao_sob_orcamento_analitico": {
-          "P_aplicado_W": 30.761904761904717,
-          "max_T_die_240s_C": 81.56258520983442,
-          "final_Trad_240s_C": 63.713128955081004,
-          "respeitou_Tcap_em_operacao_viavel": true
+          "P_aplicado_inicial_W": 30.761904761904717,
+          "f_comando_GHz": 0.49354169353022637,
+          "P_media_planta_W": 31.771228897872795,
+          "P_pico_planta_W": 31.986031349379203,
+          "max_T_die_240s_C": 82.26004278007417,
+          "final_Trad_240s_C": 63.85344634842579,
+          "operacao_viavel": true,
+          "violou_Tcap": false,
+          "respeitou_Tcap": true,
+          "status_operacao_viavel": "pass"
         }
       }
     },
@@ -284,17 +344,27 @@
         "limitante_ativo": "conducao_fourier_acoplada"
       },
       "numerico_ode_heun": {
-        "P_ode_acoplado_W": 15.256125405844045,
-        "P_ode_limite_Tcap_240s_W": 15.256125405844045,
+        "f_ode_acoplada_GHz": 0.30000000000001426,
+        "P_ode_acoplado_media_W": 22.46673766715439,
+        "P_ode_acoplado_pico_W": 22.781439182997204,
+        "Tmax_ode_acoplado_C": 86.05786576437072,
+        "f_ode_limite_Tcap_GHz": 0.30000000000001426,
+        "P_ode_limite_Tcap_media_W": 22.46673766715439,
         "Trad_target_240s_K": 349.5,
-        "erro_analitico_vs_ode_acoplado_W": -2.589458739177422,
-        "erro_relativo_acoplado_pct": 16.973239733500733,
-        "margem_conservadora_ate_violacao_Tcap_W": 2.589458739177422,
+        "diferenca_orcamento_analitico_menos_potencia_media_ode_W": -9.800071000487767,
+        "diferenca_relativa_orcamento_vs_media_ode_pct": 43.6203562158254,
+        "diferenca_media_ode_limite_Tcap_menos_orcamento_analitico_W": 9.800071000487767,
         "simulacao_sob_orcamento_analitico": {
-          "P_aplicado_W": 21.76498530346585,
-          "max_T_die_240s_C": 85.66849926377648,
-          "final_Trad_240s_C": 70.33846982775486,
-          "respeitou_Tcap_em_operacao_viavel": true
+          "P_aplicado_inicial_W": 21.76498530346585,
+          "f_comando_GHz": 0.3,
+          "P_media_planta_W": 22.466737667153364,
+          "P_pico_planta_W": 22.781439182996174,
+          "max_T_die_240s_C": 86.05786576437032,
+          "final_Trad_240s_C": 70.44110037292205,
+          "operacao_viavel": false,
+          "violou_Tcap": true,
+          "respeitou_Tcap": false,
+          "status_operacao_viavel": "not_applicable"
         }
       }
     }

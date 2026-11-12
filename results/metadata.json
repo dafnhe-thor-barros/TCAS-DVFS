@@ -1,6 +1,6 @@
 {
   "project": "TCAS-DVFS: Thermal-Crosstalk-Aware Scheduling and Model Predictive DVFS for Spaceborne AI",
-  "timestamp_utc": "2026-11-12T15:36:17.789137+00:00",
+  "timestamp_utc": "2026-11-12T18:06:08.722282+00:00",
   "environment": {
     "python_version": "3.14.6",
     "python_executable": "C:\\Python314\\python.exe",
@@ -16,8 +16,8 @@
     "repository": "https://github.com/dafnhe-thor-barros/TCAS-DVFS",
     "baseline_frozen_tag": "audit-baseline-a8027ee",
     "baseline_frozen_commit": "a8027ee943659c61a09f3abb7043e22b89e74941",
-    "code_commit_hash": "59342f9873486990081813cf21edff629bf0cc80",
-    "git_commit_hash": "59342f9873486990081813cf21edff629bf0cc80",
+    "code_commit_hash": "25a1855de3edec86d12132a71ecd3849d41eddfa",
+    "git_commit_hash": "25a1855de3edec86d12132a71ecd3849d41eddfa",
     "provenance_note": "code_commit_hash e git_commit_hash registram exatamente o commit do código-fonte e dos testes de auditoria (Fases 0 a 6) com o qual todos os artefatos experimentais desta campanha foram gerados."
   },
   "simulation_parameters": {
@@ -155,48 +155,48 @@
       "size_bytes": 1595
     },
     "audit/pinn/pinn_gradient_tests.json": {
-      "sha256": "0728ce718e4a42c79b38585a718d47b39fac1036459b37c4f86bc2997c36b2af",
-      "size_bytes": 1908
+      "sha256": "393172245d5c8444b264a43cb4f8f781f6b630000fcd70ab4b63a2af1e00039f",
+      "size_bytes": 1834
     },
     "audit/pinn/pinn_vs_mlp_comparison.json": {
-      "sha256": "39f5c73bae6f5dcc9ef795b279903f9a02faa624c85552b579900ebd09091f89",
-      "size_bytes": 2963
+      "sha256": "99db032500a07287ba155aec782687b95fef044dca526856dbcadf8f6a41d17f",
+      "size_bytes": 2874
     },
     "audit/pinn/pinn_training_curves.csv": {
       "sha256": "b46c1bafbd6574fcb8e6fdbecb6563a2665bfa806cbe1aeab6d759878ad55e85",
       "size_bytes": 46891
     },
     "audit/mpc/mpc_validation_report.json": {
-      "sha256": "ca2a725ba5b7114c9e19da9b7d9ac1df575318c71056f3ba275ebc5008a6d30b",
-      "size_bytes": 12821
+      "sha256": "8fe23bee6549d083082409da3b41cdeebbb349fc52dc6d62931f48939d6aa727",
+      "size_bytes": 12376
     },
     "audit/mpc/mpc_nonlinear_prediction_error.csv": {
       "sha256": "b0768e2339ee1319a7764aec599e79971820a2ee9cdbb3b681a0b615b36f0580",
       "size_bytes": 13595
     },
     "audit/numerical_validation/thermal_budget_validation.json": {
-      "sha256": "289401fef1935ebae9dacf4edc6a6124234bcb07ed04c66e6425c0f72f158cb7",
-      "size_bytes": 13318
+      "sha256": "90094f3be66343461b4aa8e5143b7b4042490b3b65fdcb691f82db541901e8a5",
+      "size_bytes": 16662
     },
     "audit/sdp/sdp_validation_report.json": {
-      "sha256": "54be1674d16ecc485c66ef5397dc3b67d6bac019b18ca3f127bb990b3c4d5b1e",
-      "size_bytes": 10278
+      "sha256": "d861859d20142a795120eda28a56c5ffdaf544af15e152c5c49890db5e9b45c7",
+      "size_bytes": 9995
     },
     "audit/numerical_validation/ekf_jacobian_dso_report.json": {
-      "sha256": "c90707fadfc3aca77628b18be7d4746da0756769aa1f74cb2853c9ffb2f776b9",
-      "size_bytes": 8802
+      "sha256": "bcd0973161da47ec66845c4908c40026f88c0e1f6bf1963a45de692cb07ffd42",
+      "size_bytes": 8512
     },
     "audit/numerical_validation/reliability_validation.json": {
-      "sha256": "2e769d0d886b5b0f4d88676df0f6ff037da4e47ffe147c1209afe7b37242bb06",
-      "size_bytes": 5359
+      "sha256": "8bfed16969f3d168c8c616c3f08ee1df914c20ea494dda0f3a7befee2aa35206",
+      "size_bytes": 5154
     },
     "docs/elsevier/main.tex": {
-      "sha256": "c5edc711dfd7dee689234a457e938630ac0a1b303d6a1ee681704133f3aff90b",
-      "size_bytes": 71724
+      "sha256": "60972b8313f6a517ad926fefbb58b42d7a62f5bcd6c1a4dd83133a4ad35d3435",
+      "size_bytes": 76057
     },
     "docs/elsevier/main.pdf": {
-      "sha256": "dbd767f5cf6ce210825e88d3b28fd84ee408157c7c2543f116b4a726546c2041",
-      "size_bytes": 5642323
+      "sha256": "52e77f55a75a660818dba2aab707ba6133713dac4d2a2b43610f2d7e4504d19f",
+      "size_bytes": 5667795
     },
     "docs/elsevier/highlights.txt": {
       "sha256": "d3d80e4ac99b9f1f7cfb61a76f5a402c1b60dcb9fb75a09116519db9ee13a42b",
