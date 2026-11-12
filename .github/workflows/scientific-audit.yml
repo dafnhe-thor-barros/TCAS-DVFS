@@ -42,6 +42,7 @@ jobs:
         run: python audit/sdp/validate_sdp_scheduler.py
       - name: Retrain and regenerate PINN comparison report
         run: python experiments/validar_pinn.py
+      # Preserve regenerated MPC trajectory CSV and PINN figure alongside JSON reports.
       - name: Upload regenerated numerical reports
         if: always()
         uses: actions/upload-artifact@v4
