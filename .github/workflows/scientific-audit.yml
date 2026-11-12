@@ -51,7 +51,9 @@ jobs:
             audit/numerical_validation/*.json
             audit/pinn/*.json
             audit/mpc/*.json
+            audit/mpc/*.csv
             audit/sdp/*.json
+            audit/pinn/*.png
           if-no-files-found: warn
 
   latex-build:
